@@ -21,8 +21,11 @@ import {Colors} from '../constants/theme';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const backgroundImg = require('../assets/images/background.png');
-const robotImg = require('../assets/images/robot_mascot.png');
-const glitchyImg = require('../assets/images/Glitchy.png');
+const step1Img = require('../assets/images/step1-image.png');
+const step2Img = require('../assets/images/step2-image.png');
+const step3Img = require('../assets/images/step3-image.png');
+const step4Img = require('../assets/images/step4-image.png');
+const step5Img = require('../assets/images/step5-image.png');
 
 // ─── Tutorial Data ────────────────────────────────────────────────────────────
 const TUTORIAL_STEPS = [
@@ -30,41 +33,40 @@ const TUTORIAL_STEPS = [
     id: '1',
     title: "What's Your Mission?",
     description: 'Catch Glitchy by building the right strategy with your cards.',
-    image: 'mission',
+    image: step1Img,
   },
   {
     id: '2',
-    title: 'Setup Your Game',
-    description: 'Choose your robot color, scan the board, and place your tokens on starting positions.',
-    image: 'setup',
+    title: 'Think. Arrange. Scan.',
+    description: 'Use your logic to plan each step carefully. Arrange your cards in the right order, then scan them to activate your move.',
+    image: step2Img,
   },
   {
     id: '3',
-    title: 'Game Phases',
-    description: 'Plan your moves, execute cards, watch Glitchy move, then refill and repeat!',
-    image: 'phases',
+    title: 'Use RAM Wisely',
+    description: 'Each card you play uses RAM energy. Plan your moves carefully and make every action count.',
+    image: step3Img,
   },
   {
     id: '4',
-    title: 'Strategy Tips',
-    description: 'Conserve RAM for battles, avoid walls, and predict opponent movements.',
-    image: 'strategy',
+    title: 'Board + App Together',
+    description: 'Set up the board properly, then follow the instructions in the app to continue the game smoothly.',
+    image: step4Img,
   },
   {
     id: '5',
-    title: 'Ready to Play?',
-    description: "You're all set! Tap 'Start Game' to begin your adventure.",
-    image: 'ready',
+    title: 'Are You Ready?',
+    description: 'Join the game and invite your friends to play together.',
+    image: step5Img,
   },
 ];
 
 // ─── Tutorial Slide ───────────────────────────────────────────────────────────
 interface TutorialSlideProps {
   item: typeof TUTORIAL_STEPS[0];
-  index: number;
 }
 
-function TutorialSlide({item, index}: TutorialSlideProps) {
+function TutorialSlide({item}: TutorialSlideProps) {
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.9);
 
@@ -84,17 +86,7 @@ function TutorialSlide({item, index}: TutorialSlideProps) {
       {/* Image Section */}
       <Animated.View style={[styles.imageSection, animStyle]}>
         <View style={styles.imageContainer}>
-          {index === 0 && (
-            <>
-              <Image source={robotImg} style={styles.robotImage} resizeMode="contain" />
-              <Image source={glitchyImg} style={styles.glitchyImage} resizeMode="contain" />
-            </>
-          )}
-          {index > 0 && (
-            <View style={styles.placeholderImage}>
-              <Text style={styles.placeholderText}>Step {index + 1}</Text>
-            </View>
-          )}
+          <Image source={item.image} style={styles.stepImage} resizeMode="contain" />
         </View>
       </Animated.View>
 
@@ -193,7 +185,7 @@ export default function GameTutorialScreen({onComplete, onSkip}: GameTutorialScr
         <View style={styles.buttonSection}>
           <TouchableOpacity style={styles.nextButton} onPress={handleNext} activeOpacity={0.85}>
             <Text style={styles.nextButtonText}>
-              {currentIndex === TUTORIAL_STEPS.length - 1 ? 'Start Game' : 'Next'}
+              {currentIndex === TUTORIAL_STEPS.length - 1 ? 'Go' : 'Next'}
             </Text>
           </TouchableOpacity>
 
@@ -235,34 +227,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
-  robotImage: {
-    width: 180,
-    height: 180,
-    position: 'absolute',
-    left: 20,
-    top: 20,
-  },
-  glitchyImage: {
-    width: 140,
-    height: 140,
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-  },
-  placeholderImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255,0,255,0.1)',
-    borderWidth: 2,
-    borderColor: 'rgba(255,0,255,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.3)',
+  stepImage: {
+    width: SCREEN_WIDTH - 64,
+    height: 300,
   },
   // Text Section
   textSection: {
