@@ -31,6 +31,7 @@ export function HomeIcon({size = 24, color = '#fff'}: IconProps) {
 export function CollectionIcon({size = 24, color = '#fff'}: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+<<<<<<< HEAD
       <Path
         d="M19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3Z"
         stroke={color}
@@ -51,6 +52,22 @@ export function CollectionIcon({size = 24, color = '#fff'}: IconProps) {
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
+=======
+      {/* Stack of cards - tilted */}
+      <Path
+        d="M4 8L8 4L18 6L20 10L16 14L6 12L4 8Z"
+        fill={color}
+        opacity="0.3"
+      />
+      <Path
+        d="M6 12L10 8L20 10L22 14L18 18L8 16L6 12Z"
+        fill={color}
+        opacity="0.6"
+      />
+      <Path
+        d="M8 16L12 12L22 14L24 18L20 22L10 20L8 16Z"
+        fill={color}
+>>>>>>> origin/main
       />
     </Svg>
   );
@@ -59,6 +76,7 @@ export function CollectionIcon({size = 24, color = '#fff'}: IconProps) {
 export function RulesIcon({size = 24, color = '#fff'}: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+<<<<<<< HEAD
       <Path
         d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
         stroke={color}
@@ -86,6 +104,28 @@ export function RulesIcon({size = 24, color = '#fff'}: IconProps) {
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
+=======
+      {/* Gavel/hammer icon */}
+      <Path
+        d="M14 3L10 7L17 14L21 10L14 3Z"
+        fill={color}
+      />
+      <Path
+        d="M8 9L4 13L11 20L15 16L8 9Z"
+        fill={color}
+        opacity="0.7"
+      />
+      <Path
+        d="M2 22L6 18L9 21L5 25L2 22Z"
+        fill={color}
+      />
+      {/* Handle */}
+      <Path
+        d="M16 12L12 16"
+        stroke={color}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+>>>>>>> origin/main
       />
     </Svg>
   );
