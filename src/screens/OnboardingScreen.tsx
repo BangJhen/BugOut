@@ -6,6 +6,7 @@ import {
   Dimensions,
   Image,
   StatusBar,
+  ImageBackground,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -18,52 +19,7 @@ import {Colors} from '../constants/theme';
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
 const logoImg = require('../assets/images/logo.png');
-
-function BackgroundGlows() {
-  return (
-    <>
-      {/* Pink glow */}
-      <View
-        style={[
-          styles.glow,
-          {
-            width: 400,
-            height: 400,
-            backgroundColor: 'rgba(255,46,149,0.1)',
-            left: -100,
-            top: '40%',
-          },
-        ]}
-      />
-      {/* Green glow */}
-      <View
-        style={[
-          styles.glow,
-          {
-            width: 300,
-            height: 300,
-            backgroundColor: 'rgba(153,255,0,0.05)',
-            right: -100,
-            top: '10%',
-          },
-        ]}
-      />
-      {/* Cyan glow */}
-      <View
-        style={[
-          styles.glow,
-          {
-            width: 250,
-            height: 250,
-            backgroundColor: 'rgba(0,240,255,0.05)',
-            left: -50,
-            bottom: '10%',
-          },
-        ]}
-      />
-    </>
-  );
-}
+const backgroundImg = require('../assets/images/background.png');
 
 interface LoadingBarProps {
   progress: number;
@@ -139,9 +95,11 @@ export default function OnboardingScreen({onComplete}: OnboardingScreenProps) {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <ImageBackground
+      source={backgroundImg}
+      style={styles.container}
+      resizeMode="cover">
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <BackgroundGlows />
 
       {/* Center content */}
       <View style={styles.centerContent}>
@@ -165,7 +123,7 @@ export default function OnboardingScreen({onComplete}: OnboardingScreenProps) {
         style={[styles.fadeOverlay, fadeStyle]}
         pointerEvents="none"
       />
-    </View>
+    </ImageBackground>
   );
 }
 
@@ -175,10 +133,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  glow: {
-    position: 'absolute',
-    borderRadius: 999,
   },
   centerContent: {
     alignItems: 'center',

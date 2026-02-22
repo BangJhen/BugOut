@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
   StatusBar,
+  ImageBackground,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -26,53 +27,7 @@ const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 const robotImg = require('../assets/images/robot_mascot.png');
 const googleIcon = require('../assets/images/google_icon.png');
 const appleIcon = require('../assets/images/apple_icon.png');
-
-// ─── Background Glows ─────────────────────────────────────────────────────────
-function BackgroundGlows() {
-  return (
-    <>
-      {/* Large purple/pink glow - center left */}
-      <View
-        style={[
-          styles.glow,
-          {
-            width: 500,
-            height: 500,
-            backgroundColor: 'rgba(138,43,226,0.25)',
-            left: -200,
-            top: '30%',
-          },
-        ]}
-      />
-      {/* Pink accent glow - bottom */}
-      <View
-        style={[
-          styles.glow,
-          {
-            width: 350,
-            height: 350,
-            backgroundColor: 'rgba(255,20,147,0.15)',
-            left: -50,
-            bottom: -100,
-          },
-        ]}
-      />
-      {/* Subtle cyan glow - top right */}
-      <View
-        style={[
-          styles.glow,
-          {
-            width: 250,
-            height: 250,
-            backgroundColor: 'rgba(0,240,255,0.08)',
-            right: -80,
-            top: 100,
-          },
-        ]}
-      />
-    </>
-  );
-}
+const backgroundImg = require('../assets/images/background.png');
 
 // ─── Speech Bubble ────────────────────────────────────────────────────────────
 function SpeechBubble() {
@@ -256,9 +211,11 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <ImageBackground
+      source={backgroundImg}
+      style={styles.container}
+      resizeMode="cover">
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <BackgroundGlows />
       <SpeechBubble />
       <RobotMascot />
 
@@ -282,7 +239,7 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
         <GuestButton onPress={onLogin} />
         <SignUpFooter />
       </View>
-    </View>
+    </ImageBackground>
   );
 }
 
@@ -290,10 +247,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  glow: {
-    position: 'absolute',
-    borderRadius: 999,
   },
   // Speech Bubble
   speechBubbleContainer: {

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
   StatusBar,
+  ImageBackground,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -26,6 +27,7 @@ const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
 const robotImg = require('../assets/images/robot_mascot.png');
 const userAvatar = require('../assets/images/user_avatar.png');
+const backgroundImg = require('../assets/images/background.png');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Tab = 'home' | 'collection' | 'rules' | 'settings';
@@ -382,7 +384,10 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <ImageBackground
+      source={backgroundImg}
+      style={styles.container}
+      resizeMode="cover">
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <Header insets={insets} />
@@ -412,7 +417,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         onTabChange={setActiveTab}
         bottomInset={insets.bottom}
       />
-    </View>
+    </ImageBackground>
   );
 }
 
