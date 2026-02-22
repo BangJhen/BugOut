@@ -128,7 +128,7 @@ function SquadSizeToggle({selectedSize, onSizeChange}: SquadSizeToggleProps) {
     <Animated.View style={[styles.squadSection, animStyle]}>
       <Text style={styles.squadTitle}>SQUAD SIZE</Text>
       <View style={styles.toggleContainer}>
-        {[2, 3, 4].map(size => (
+        {[1, 2, 3, 4].map(size => (
           <TouchableOpacity
             key={size}
             style={[
@@ -142,7 +142,7 @@ function SquadSizeToggle({selectedSize, onSizeChange}: SquadSizeToggleProps) {
                 styles.toggleText,
                 selectedSize === size && styles.toggleTextActive,
               ]}>
-              {size} Player
+              {size} Player{size > 1 ? 's' : ''}
             </Text>
           </TouchableOpacity>
         ))}
@@ -194,7 +194,7 @@ interface PlayerSelectionScreenProps {
 }
 
 export default function PlayerSelectionScreen({onBack, onContinue}: PlayerSelectionScreenProps) {
-  const [squadSize, setSquadSize] = useState(4);
+  const [squadSize, setSquadSize] = useState(1);
   const insets = useSafeAreaInsets();
 
   const handleContinue = () => {
