@@ -22,7 +22,7 @@ import Animated, {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../constants/theme';
-import {HomeIcon, CollectionIcon, RulesIcon, SettingsIcon, BellIcon} from '../components/NavIcons';
+import {HomeIcon, SettingsIcon, BellIcon} from '../components/NavIcons';
 import CollectionScreen from './CollectionScreen';
 import SettingsScreen from './SettingsScreen';
 import RulesScreen from './RulesScreen';
@@ -437,19 +437,25 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    padding: 3,
+    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   avatarInner: {
-    flex: 1,
+    width: 36,
+    height: 36,
     backgroundColor: '#111827',
-    borderRadius: 20,
-    padding: 2,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: '#111827',
     overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   userName: {
     fontWeight: '700',
