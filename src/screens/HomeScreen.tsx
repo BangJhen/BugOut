@@ -1,4 +1,8 @@
 import React, {useEffect, useState} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useNavigation} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import type {RootStackParamList} from '../navigation/AppNavigator';
 import {
   View,
   Text,
@@ -144,6 +148,25 @@ function StatCard({label, value, borderColor, delay = 0}: StatCardProps) {
 
 // ─── Play Button ──────────────────────────────────────────────────────────────
 function PlayButton() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  
+  const handlePlayPress = async () => {
+    try {
+      const hasSeenTutorial = await AsyncStorage.getItem('hasSeenGameTutorial');
+      
+      if (!hasSeenTutorial) {
+        // First-time user - show tutorial
+        navigation.navigate('GameTutorial');
+        await AsyncStorage.setItem('hasSeenGameTutorial', 'true');
+      } else {
+        // Returning user - go directly to game
+        // TODO: Navigate to actual game screen when implemented
+        console.log('Navigate to game');
+      }
+    } catch (error) {
+      console.error('Error checking tutorial status:', error);
+    }
+  };
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(28);
   const pulseScale = useSharedValue(1);
@@ -185,16 +208,17 @@ function PlayButton() {
   }));
 
   return (
-    <Animated.View style={[styles.playButtonWrapper, animStyle]}>
-      {/* Pulse ring */}
-      <Animated.View style={[styles.pulseRing, pulseStyle]} />
+    <Animated.View style={animStyle}>
+      <View style={styles.playButtonWrapper}>
+        <Animated.View style={[styles.pulseRing, pulseStyle]} />
 
-      <TouchableOpacity style={styles.playButton} activeOpacity={0.85}>
-        <View style={styles.playButtonInner}>
-          <Text style={styles.playText}>PLAY GAME</Text>
-          <View style={styles.playTriangle} />
-        </View>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.playButton} activeOpacity={0.85} onPress={handlePlayPress}>
+          <View style={styles.playButtonInner}>
+            <Text style={styles.playText}>PLAY GAME</Text>
+            <View style={styles.playTriangle} />
+          </View>
+        </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 }

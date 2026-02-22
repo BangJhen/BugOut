@@ -4,11 +4,13 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
+import GameTutorialScreen from '../screens/GameTutorialScreen';
 
 export type RootStackParamList = {
   Onboarding: undefined;
   Login: undefined;
   Home: undefined;
+  GameTutorial: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -29,6 +31,11 @@ export default function AppNavigator() {
           name="Home"
           component={HomeWrapper}
           options={{gestureEnabled: false}}
+        />
+        <Stack.Screen
+          name="GameTutorial"
+          component={GameTutorialWrapper}
+          options={{animation: 'fade'}}
         />
       </Stack.Navigator>
     </NavigationContainer>
@@ -53,8 +60,15 @@ function LoginWrapper({navigation}: any) {
 
 function HomeWrapper({navigation}: any) {
   return (
-    <HomeScreen
-      onLogout={() => navigation.replace('Onboarding')}
+    <HomeScreen />
+  );
+}
+
+function GameTutorialWrapper({navigation}: any) {
+  return (
+    <GameTutorialScreen
+      onComplete={() => navigation.goBack()}
+      onSkip={() => navigation.goBack()}
     />
   );
 }
