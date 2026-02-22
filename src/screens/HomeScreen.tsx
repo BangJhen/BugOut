@@ -22,7 +22,7 @@ import Animated, {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../constants/theme';
-import {HomeIcon, CollectionIcon, RulesIcon, SettingsIcon} from '../components/NavIcons';
+import {HomeIcon, CollectionIcon, RulesIcon, SettingsIcon, BellIcon} from '../components/NavIcons';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
@@ -89,7 +89,7 @@ function Header({insets}: {insets: {top: number}}) {
 
           {/* Bell button */}
           <TouchableOpacity style={styles.bellButton} activeOpacity={0.7}>
-            <Text style={styles.bellIcon}>🔔</Text>
+            <BellIcon size={20} color="white" />
             <View style={styles.notificationDot} />
           </TouchableOpacity>
         </View>
@@ -128,7 +128,7 @@ function StatCard({label, value, borderColor, delay = 0}: StatCardProps) {
     <Animated.View
       style={[
         styles.statCard,
-        {borderColor, borderBottomWidth: 2, borderBottomColor: borderColor},
+        {borderColor, borderBottomColor: borderColor},
         animStyle,
       ]}>
       <Text style={styles.statLabel}>{label}</Text>
@@ -185,14 +185,10 @@ function PlayButton() {
       <Animated.View style={[styles.pulseRing, pulseStyle]} />
 
       <TouchableOpacity style={styles.playButton} activeOpacity={0.85}>
-        <LinearGradient
-          colors={['#cc00cc', '#ff00ff', '#ff44ff']}
-          start={{x: 0, y: 0}}
-          end={{x: 1, y: 1}}
-          style={styles.playButtonGradient}>
-          <Text style={styles.playIcon}>▶</Text>
+        <View style={styles.playButtonInner}>
           <Text style={styles.playText}>PLAY GAME</Text>
-        </LinearGradient>
+          <View style={styles.playTriangle} />
+        </View>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -257,25 +253,25 @@ function BottomNav({
     <Animated.View
       style={[styles.bottomNav, {paddingBottom: bottomInset + 8}, animStyle]}>
       <NavButton
-        icon={<HomeIcon size={26} color={activeTab === 'home' ? Colors.primary : Colors.navInactive} />}
+        icon={<HomeIcon size={34} color={activeTab === 'home' ? Colors.primary : Colors.navInactive} />}
         label="HOME"
         active={activeTab === 'home'}
         onPress={() => onTabChange('home')}
       />
       <NavButton
-        icon={<CollectionIcon size={26} color={activeTab === 'collection' ? Colors.primary : Colors.navInactive} />}
+        icon={<CollectionIcon size={34} color={activeTab === 'collection' ? Colors.primary : Colors.navInactive} />}
         label="COLLECTION"
         active={activeTab === 'collection'}
         onPress={() => onTabChange('collection')}
       />
       <NavButton
-        icon={<RulesIcon size={26} color={activeTab === 'rules' ? Colors.primary : Colors.navInactive} />}
+        icon={<RulesIcon size={34} color={activeTab === 'rules' ? Colors.primary : Colors.navInactive} />}
         label="RULES"
         active={activeTab === 'rules'}
         onPress={() => onTabChange('rules')}
       />
       <NavButton
-        icon={<SettingsIcon size={26} color={activeTab === 'settings' ? Colors.primary : Colors.navInactive} />}
+        icon={<SettingsIcon size={34} color={activeTab === 'settings' ? Colors.primary : Colors.navInactive} />}
         label="SETTINGS"
         active={activeTab === 'settings'}
         onPress={() => onTabChange('settings')}
@@ -299,36 +295,24 @@ function HomeContent() {
   const robotScale = useSharedValue(0.5);
   const robotRotate = useSharedValue(-15);
   const floatY = useSharedValue(0);
-  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
-    // Entrance animation with scale and rotation
     robotOpacity.value = withTiming(1, {duration: 600, easing: Easing.out(Easing.ease)});
-    robotScale.value = withSpring(1, {
-      stiffness: 200,
-      damping: 15,
-      mass: 1,
-    });
-    robotRotate.value = withSpring(0, {
-      stiffness: 180,
-      damping: 12,
-    });
-    
-    // Start floating animation after entrance
-    if (imageLoaded) {
-      setTimeout(() => {
-        floatY.value = withRepeat(
-          withSequence(
-            withTiming(-8, {duration: 2500, easing: Easing.inOut(Easing.ease)}),
-            withTiming(0, {duration: 2500, easing: Easing.inOut(Easing.ease)}),
-          ),
-          -1,
-          true,
-        );
-      }, 600);
-    }
+    robotScale.value = withSpring(1, {stiffness: 200, damping: 15, mass: 1});
+    robotRotate.value = withSpring(0, {stiffness: 180, damping: 12});
+    floatY.value = withDelay(
+      700,
+      withRepeat(
+        withSequence(
+          withTiming(-8, {duration: 2500, easing: Easing.inOut(Easing.ease)}),
+          withTiming(0, {duration: 2500, easing: Easing.inOut(Easing.ease)}),
+        ),
+        -1,
+        true,
+      ),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imageLoaded]);
+  }, []);
 
   const robotStyle = useAnimatedStyle(() => ({
     opacity: robotOpacity.value,
@@ -344,9 +328,9 @@ function HomeContent() {
       {/* Gradient overlay behind robot */}
       <LinearGradient
         colors={[
-          'rgba(88,28,135,0.2)',
-          'rgba(109,40,217,0.15)',
-          'rgba(15,16,32,0)'
+          'rgba(22,78,99,0)',
+          'rgba(22,78,99,0.1)',
+          '#0a0c10',
         ]}
         locations={[0, 0.5, 1]}
         style={styles.gradientOverlay}
@@ -358,20 +342,12 @@ function HomeContent() {
           source={robotImg}
           style={styles.homeRobotImage}
           resizeMode="contain"
-          onLoad={() => setImageLoaded(true)}
           fadeDuration={0}
         />
       </Animated.View>
 
-      {/* Purple-cyan glow under mascot */}
-      <LinearGradient
-        colors={[
-          'rgba(109,40,217,0.3)',
-          'rgba(88,28,135,0.2)',
-          'rgba(15,16,32,0)'
-        ]}
-        style={styles.robotGlow}
-      />
+      {/* Magenta glow under mascot */}
+      <View style={styles.robotGlow} />
 
       {/* Stat cards */}
       <View style={styles.statsRow}>
@@ -555,9 +531,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bellIcon: {
-    fontSize: 16,
-  },
   notificationDot: {
     position: 'absolute',
     right: 2,
@@ -584,7 +557,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: -6,
     right: 0,
-    height: SCREEN_HEIGHT * 0.45,
+    height: SCREEN_HEIGHT * 0.42,
     zIndex: 0,
   },
   homeRobotContainer: {
@@ -600,11 +573,12 @@ const styles = StyleSheet.create({
   },
   robotGlow: {
     position: 'absolute',
-    top: '20%',
+    top: '22%',
     alignSelf: 'center',
-    width: 200,
-    height: 120,
-    borderRadius: 999,
+    width: 128,
+    height: 128,
+    borderRadius: 9999,
+    backgroundColor: 'rgba(255,0,255,0.2)',
   },
   statsRow: {
     flexDirection: 'row',
@@ -621,6 +595,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 17,
     gap: 4,
     borderWidth: 1,
+    borderBottomWidth: 2,
   },
   statLabel: {
     fontWeight: '400',
@@ -628,47 +603,56 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     letterSpacing: 1,
     textTransform: 'uppercase',
+    textAlign: 'center',
   },
   statValue: {
     fontWeight: '700',
     fontSize: 20,
     color: 'white',
     lineHeight: 32,
+    textAlign: 'center',
   },
   // Play Button
   playButtonWrapper: {
     alignItems: 'center',
-    marginTop: 30,
+    marginTop: 20,
   },
   pulseRing: {
     position: 'absolute',
-    width: SCREEN_WIDTH * 0.78,
+    width: 318,
     height: 64,
     borderRadius: 74,
     borderWidth: 2,
     borderColor: 'rgba(255,0,255,0.5)',
   },
   playButton: {
-    width: SCREEN_WIDTH * 0.78,
+    width: 318,
     height: 64,
     borderRadius: 74,
     overflow: 'hidden',
+    backgroundColor: '#ff00ff',
     shadowColor: '#ff00ff',
     shadowOffset: {width: 0, height: 0},
     shadowOpacity: 0.45,
     shadowRadius: 28,
     elevation: 12,
   },
-  playButtonGradient: {
+  playButtonInner: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: 10,
   },
-  playIcon: {
-    fontSize: 18,
-    color: 'white',
+  playTriangle: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 12,
+    borderTopWidth: 8,
+    borderBottomWidth: 8,
+    borderLeftColor: 'white',
+    borderTopColor: 'transparent',
+    borderBottomColor: 'transparent',
   },
   playText: {
     fontWeight: '700',
@@ -677,8 +661,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   playSection: {
+    flex: 1,
     alignItems: 'center',
-    marginTop: 20,
+    justifyContent: 'center',
   },
   // Placeholder
   placeholderContainer: {
@@ -718,12 +703,12 @@ const styles = StyleSheet.create({
   bottomNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingTop: 16,
-    paddingHorizontal: 32,
+    paddingTop: 25,
+    paddingHorizontal: 48,
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,242,255,0.2)',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
     backgroundColor: Colors.background,
   },
   navButton: {
@@ -735,11 +720,11 @@ const styles = StyleSheet.create({
   navIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 28,
+    height: 40,
   },
   navLabel: {
     fontWeight: '500',
-    fontSize: 10,
+    fontSize: 12,
     letterSpacing: -0.45,
     textTransform: 'uppercase',
   },
