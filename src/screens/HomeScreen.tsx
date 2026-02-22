@@ -329,10 +329,10 @@ function HomeContent() {
       <LinearGradient
         colors={[
           'rgba(22,78,99,0)',
-          'rgba(22,78,99,0.1)',
-          '#0a0c10',
+          'rgba(10,12,16,0.3)',
+          'rgba(10,12,16,0.8)',
         ]}
-        locations={[0, 0.5, 1]}
+        locations={[0, 0.4, 1]}
         style={styles.gradientOverlay}
       />
 
@@ -346,8 +346,6 @@ function HomeContent() {
         />
       </Animated.View>
 
-      {/* Magenta glow under mascot */}
-      <View style={styles.robotGlow} />
 
       {/* Stat cards */}
       <View style={styles.statsRow}>
@@ -570,15 +568,6 @@ const styles = StyleSheet.create({
   homeRobotImage: {
     width: '100%',
     height: '100%',
-  },
-  robotGlow: {
-    position: 'absolute',
-    top: '22%',
-    alignSelf: 'center',
-    width: 128,
-    height: 128,
-    borderRadius: 9999,
-    backgroundColor: 'rgba(255,0,255,0.2)',
   },
   statsRow: {
     flexDirection: 'row',
