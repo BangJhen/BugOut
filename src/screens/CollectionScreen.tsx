@@ -19,6 +19,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Colors} from '../constants/theme';
 
 const backgroundImg = require('../assets/images/background.png');
+const glitchyImg = require('../assets/images/Glitchy.png');
 
 // Mock data for characters
 const CHARACTERS = [
@@ -34,7 +35,7 @@ const CHARACTERS = [
     id: '2',
     type: 'GLITCHY',
     name: 'GlitcPrime',
-    image: require('../assets/images/robot_mascot.png'),
+    image: glitchyImg,
     category: 'glitchy',
     isUsed: true,
   },
@@ -204,7 +205,7 @@ function ShopButton() {
   return (
     <Animated.View style={[styles.shopButtonContainer, animStyle]}>
       <TouchableOpacity style={styles.shopButton} activeOpacity={0.85}>
-        <ShoppingCartIcon size={20} color="white" />
+        <ShoppingBagIcon size={20} color="white" />
         <Text style={styles.shopButtonText}>Shop</Text>
       </TouchableOpacity>
     </Animated.View>
@@ -237,11 +238,36 @@ function SearchIcon({size = 24, color = '#fff'}: {size?: number; color?: string}
   );
 }
 
-// ─── Shopping Cart Icon ───────────────────────────────────────────────────────
-function ShoppingCartIcon({size = 24, color = '#fff'}: {size?: number; color?: string}) {
+// ─── Shopping Bag Icon (SVG) ─────────────────────────────────────────────────
+function ShoppingBagIcon({size = 24, color = '#fff'}: {size?: number; color?: string}) {
   return (
-    <View style={[styles.cartIconContainer, {width: size, height: size}]}>
-      <Text style={{fontSize: size * 0.85, color}}>🛍</Text>
+    <View style={{width: size, height: size}}>
+      <View style={[
+        styles.bagBody,
+        {
+          width: size * 0.75,
+          height: size * 0.65,
+          borderWidth: 2,
+          borderColor: color,
+          borderRadius: size * 0.1,
+          marginTop: size * 0.25,
+          marginLeft: size * 0.125,
+        },
+      ]} />
+      <View style={[
+        styles.bagHandle,
+        {
+          width: size * 0.45,
+          height: size * 0.35,
+          borderWidth: 2,
+          borderColor: color,
+          borderRadius: size * 0.25,
+          borderBottomWidth: 0,
+          position: 'absolute',
+          top: size * 0.05,
+          left: size * 0.275,
+        },
+      ]} />
     </View>
   );
 }
@@ -374,10 +400,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     transform: [{rotate: '45deg'}],
   },
-  cartIconContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  bagBody: {},
+  bagHandle: {},
   // Scroll View
   scrollView: {
     flex: 1,
@@ -476,7 +500,7 @@ const styles = StyleSheet.create({
   // Shop Button
   shopButtonContainer: {
     position: 'absolute',
-    bottom: 120,
+    bottom: 30,
     right: 24,
     zIndex: 20,
   },
