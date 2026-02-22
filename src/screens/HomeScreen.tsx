@@ -24,6 +24,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../constants/theme';
 import {HomeIcon, CollectionIcon, RulesIcon, SettingsIcon, BellIcon} from '../components/NavIcons';
 import CollectionScreen from './CollectionScreen';
+import SettingsScreen from './SettingsScreen';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
@@ -383,11 +384,7 @@ function HomeContent() {
 }
 
 // ─── Main Home Screen ─────────────────────────────────────────────────────────
-interface HomeScreenProps {
-  onLogout?: () => void;
-}
-
-export default function HomeScreen({onLogout}: HomeScreenProps) {
+export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const insets = useSafeAreaInsets();
 
@@ -405,19 +402,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         {activeTab === 'home' && <HomeContent />}
         {activeTab === 'collection' && <CollectionScreen />}
         {activeTab === 'rules' && <TabPlaceholder label="RULES" />}
-        {activeTab === 'settings' && (
-          <View style={styles.settingsContent}>
-            <TabPlaceholder label="SETTINGS" />
-            {onLogout && (
-              <TouchableOpacity
-                style={styles.logoutButton}
-                onPress={onLogout}
-                activeOpacity={0.7}>
-                <Text style={styles.logoutText}>Logout</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
+        {activeTab === 'settings' && <SettingsScreen />}
       </View>
 
       <BottomNav
@@ -734,27 +719,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.15)',
     letterSpacing: 2,
     textTransform: 'uppercase',
-  },
-  // Settings
-  settingsContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 24,
-  },
-  logoutButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 9999,
-    backgroundColor: 'rgba(255,0,255,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,0,255,0.35)',
-  },
-  logoutText: {
-    fontWeight: '600',
-    fontSize: 14,
-    color: '#ff00ff',
-    letterSpacing: 0.5,
   },
   // Bottom Nav
   bottomNav: {
