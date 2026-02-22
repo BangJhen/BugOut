@@ -23,6 +23,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../constants/theme';
 import {HomeIcon, CollectionIcon, RulesIcon, SettingsIcon, BellIcon} from '../components/NavIcons';
+import CollectionScreen from './CollectionScreen';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
@@ -402,7 +403,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       {/* Content area */}
       <View style={styles.contentArea}>
         {activeTab === 'home' && <HomeContent />}
-        {activeTab === 'collection' && <TabPlaceholder label="COLLECTION" />}
+        {activeTab === 'collection' && <CollectionScreen />}
         {activeTab === 'rules' && <TabPlaceholder label="RULES" />}
         {activeTab === 'settings' && (
           <View style={styles.settingsContent}>
