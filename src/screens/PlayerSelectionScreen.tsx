@@ -8,6 +8,7 @@ import {
   StatusBar,
   Image,
   ScrollView,
+  Modal,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -151,6 +152,50 @@ function SquadSizeToggle({selectedSize, onSizeChange}: SquadSizeToggleProps) {
   );
 }
 
+// ─── Information Modal ────────────────────────────────────────────────────────
+interface InformationModalProps {
+  visible: boolean;
+  onContinue: () => void;
+}
+
+function InformationModal({visible, onContinue}: InformationModalProps) {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onContinue}>
+      <View style={styles.infoModalOverlay}>
+        <TouchableOpacity
+          style={styles.infoModalBackdrop}
+          activeOpacity={1}
+          onPress={onContinue}
+        />
+        <View style={[styles.infoModalContent, {marginBottom: insets.bottom + 20}]}>
+          {/* Title */}
+          <Text style={styles.infoModalTitle}>INFORMATION</Text>
+          
+          {/* Message */}
+          <Text style={styles.infoModalMessage}>
+            Please arrange the board properly,{"\n"}
+            then scan it here to begin the game.
+          </Text>
+
+          {/* Continue Button */}
+          <TouchableOpacity
+            style={styles.infoModalButton}
+            onPress={onContinue}
+            activeOpacity={0.85}>
+            <Text style={styles.infoModalButtonText}>Continue</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 // ─── Player Card ──────────────────────────────────────────────────────────────
 interface PlayerCardProps {
   player: typeof PLAYERS[0];
@@ -205,6 +250,7 @@ export default function PlayerSelectionScreen({onBack, onContinue}: PlayerSelect
   const [squadSize, setSquadSize] = useState(1);
   const [visiblePlayers, setVisiblePlayers] = useState(1);
   const [exitingPlayers, setExitingPlayers] = useState<number[]>([]);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const prevSquadSizeRef = useRef(1);
   const insets = useSafeAreaInsets();
 
@@ -232,7 +278,12 @@ export default function PlayerSelectionScreen({onBack, onContinue}: PlayerSelect
     prevSquadSizeRef.current = squadSize;
   }, [squadSize]);
 
-  const handleContinue = () => {
+  const handleContinuePress = () => {
+    setShowInfoModal(true);
+  };
+
+  const handleInfoModalContinue = () => {
+    setShowInfoModal(false);
     onContinue(squadSize);
   };
 
@@ -261,9 +312,15 @@ export default function PlayerSelectionScreen({onBack, onContinue}: PlayerSelect
         </View>
       </ScrollView>
 
+      {/* Information Modal */}
+      <InformationModal
+        visible={showInfoModal}
+        onContinue={handleInfoModalContinue}
+      />
+
       {/* Continue Button */}
       <View style={[styles.bottomSection, {paddingBottom: insets.bottom + 24}]}>
-        <TouchableOpacity style={styles.continueButton} onPress={handleContinue} activeOpacity={0.85}>
+        <TouchableOpacity style={styles.continueButton} onPress={handleContinuePress} activeOpacity={0.85}>
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
@@ -416,5 +473,68 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: 'white',
     letterSpacing: 0.5,
+  },
+  // Information Modal
+  infoModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  infoModalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+  },
+  infoModalContent: {
+    width: '85%',
+    maxWidth: 400,
+    backgroundColor: 'rgba(31,41,55,0.95)',
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: '#22d3ee',
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#22d3ee',
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  infoModalTitle: {
+    fontWeight: '700',
+    fontSize: 18,
+    color: 'white',
+    letterSpacing: 2,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  infoModalMessage: {
+    fontWeight: '400',
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.85)',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 28,
+  },
+  infoModalButton: {
+    width: '100%',
+    backgroundColor: '#22d3ee',
+    borderRadius: 9999,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#22d3ee',
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  infoModalButtonText: {
+    fontWeight: '700',
+    fontSize: 18,
+    color: 'white',
   },
 });
