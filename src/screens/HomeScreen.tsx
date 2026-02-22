@@ -336,15 +336,30 @@ function HomeContent() {
         style={styles.gradientOverlay}
       />
 
-      {/* Robot mascot */}
-      <Animated.View style={[styles.homeRobotContainer, robotStyle]}>
-        <Image
-          source={robotImg}
-          style={styles.homeRobotImage}
-          resizeMode="contain"
-          fadeDuration={0}
-        />
-      </Animated.View>
+      {/* Robot mascot with decorative frame */}
+      <View style={styles.robotFrame}>
+        {/* Circular glow background */}
+        <View style={styles.robotGlowCircle} />
+        
+        {/* Border ring */}
+        <View style={styles.robotBorderRing} />
+        
+        {/* Robot */}
+        <Animated.View style={[styles.homeRobotContainer, robotStyle]}>
+          <Image
+            source={robotImg}
+            style={styles.homeRobotImage}
+            resizeMode="contain"
+            fadeDuration={0}
+          />
+        </Animated.View>
+        
+        {/* Corner accents */}
+        <View style={styles.cornerTopLeft} />
+        <View style={styles.cornerTopRight} />
+        <View style={styles.cornerBottomLeft} />
+        <View style={styles.cornerBottomRight} />
+      </View>
 
 
       {/* Stat cards */}
@@ -558,12 +573,83 @@ const styles = StyleSheet.create({
     height: SCREEN_HEIGHT * 0.42,
     zIndex: 0,
   },
-  homeRobotContainer: {
+  robotFrame: {
     alignSelf: 'center',
+    width: SCREEN_WIDTH * 0.85,
+    height: SCREEN_HEIGHT * 0.35,
+    marginTop: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  robotGlowCircle: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(139,92,246,0.15)',
+    shadowColor: '#8b5cf6',
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.4,
+    shadowRadius: 40,
+  },
+  robotBorderRing: {
+    position: 'absolute',
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    borderWidth: 1,
+    borderColor: 'rgba(139,92,246,0.2)',
+    borderStyle: 'dashed',
+  },
+  homeRobotContainer: {
     width: SCREEN_WIDTH * 0.78,
     height: SCREEN_HEIGHT * 0.3,
-    marginTop: 20,
-    zIndex: 1,
+    zIndex: 2,
+  },
+  cornerTopLeft: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    width: 24,
+    height: 24,
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderColor: 'rgba(0,242,255,0.6)',
+    borderTopLeftRadius: 4,
+  },
+  cornerTopRight: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 24,
+    height: 24,
+    borderTopWidth: 2,
+    borderRightWidth: 2,
+    borderColor: 'rgba(0,242,255,0.6)',
+    borderTopRightRadius: 4,
+  },
+  cornerBottomLeft: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    width: 24,
+    height: 24,
+    borderBottomWidth: 2,
+    borderLeftWidth: 2,
+    borderColor: 'rgba(255,0,255,0.6)',
+    borderBottomLeftRadius: 4,
+  },
+  cornerBottomRight: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    width: 24,
+    height: 24,
+    borderBottomWidth: 2,
+    borderRightWidth: 2,
+    borderColor: 'rgba(255,0,255,0.6)',
+    borderBottomRightRadius: 4,
   },
   homeRobotImage: {
     width: '100%',
