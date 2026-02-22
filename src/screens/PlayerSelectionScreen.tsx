@@ -154,11 +154,10 @@ function SquadSizeToggle({selectedSize, onSizeChange}: SquadSizeToggleProps) {
 // ─── Player Card ──────────────────────────────────────────────────────────────
 interface PlayerCardProps {
   player: typeof PLAYERS[0];
-  isActive: boolean;
   delay: number;
 }
 
-function PlayerCard({player, isActive, delay}: PlayerCardProps) {
+function PlayerCard({player, delay}: PlayerCardProps) {
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.9);
 
@@ -177,8 +176,7 @@ function PlayerCard({player, isActive, delay}: PlayerCardProps) {
     <Animated.View
       style={[
         styles.playerCard,
-        {borderColor: isActive ? player.color : 'rgba(255,255,255,0.1)'},
-        !isActive && styles.playerCardInactive,
+        {borderColor: player.color},
         animStyle,
       ]}>
       <Text style={styles.playerName}>{player.name}</Text>
@@ -217,11 +215,10 @@ export default function PlayerSelectionScreen({onBack, onContinue}: PlayerSelect
         <SquadSizeToggle selectedSize={squadSize} onSizeChange={setSquadSize} />
 
         <View style={styles.playersGrid}>
-          {PLAYERS.map((player, index) => (
+          {PLAYERS.slice(0, squadSize).map((player, index) => (
             <PlayerCard
               key={player.id}
               player={player}
-              isActive={player.id <= squadSize}
               delay={300 + index * 100}
             />
           ))}
@@ -336,9 +333,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     padding: 16,
     alignItems: 'center',
-  },
-  playerCardInactive: {
-    opacity: 0.4,
   },
   playerName: {
     fontWeight: '700',
