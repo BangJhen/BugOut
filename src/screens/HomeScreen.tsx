@@ -25,6 +25,7 @@ import {Colors} from '../constants/theme';
 import {HomeIcon, CollectionIcon, RulesIcon, SettingsIcon, BellIcon} from '../components/NavIcons';
 import CollectionScreen from './CollectionScreen';
 import SettingsScreen from './SettingsScreen';
+import RulesScreen from './RulesScreen';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
@@ -282,15 +283,6 @@ function BottomNav({
   );
 }
 
-// ─── Tab Content Placeholder ──────────────────────────────────────────────────
-function TabPlaceholder({label}: {label: string}) {
-  return (
-    <View style={styles.placeholderContainer}>
-      <Text style={styles.placeholderText}>{label}</Text>
-    </View>
-  );
-}
-
 // ─── Home Tab Content ─────────────────────────────────────────────────────────
 function HomeContent() {
   const robotOpacity = useSharedValue(0);
@@ -401,7 +393,7 @@ export default function HomeScreen() {
       <View style={styles.contentArea}>
         {activeTab === 'home' && <HomeContent />}
         {activeTab === 'collection' && <CollectionScreen />}
-        {activeTab === 'rules' && <TabPlaceholder label="RULES" />}
+        {activeTab === 'rules' && <RulesScreen />}
         {activeTab === 'settings' && <SettingsScreen />}
       </View>
 
@@ -706,19 +698,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  // Placeholder
-  placeholderContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderText: {
-    fontWeight: '700',
-    fontSize: 22,
-    color: 'rgba(255,255,255,0.15)',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
   },
   // Bottom Nav
   bottomNav: {
