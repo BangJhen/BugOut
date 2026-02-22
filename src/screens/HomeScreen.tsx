@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
   StatusBar,
+  ImageBackground,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -21,11 +22,13 @@ import Animated, {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../constants/theme';
+import {HomeIcon, CollectionIcon, RulesIcon, SettingsIcon} from '../components/NavIcons';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
 const robotImg = require('../assets/images/robot_mascot.png');
 const userAvatar = require('../assets/images/user_avatar.png');
+const backgroundImg = require('../assets/images/background.png');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Tab = 'home' | 'collection' | 'rules' | 'settings';
@@ -197,7 +200,7 @@ function PlayButton() {
 
 // ─── Bottom Nav ───────────────────────────────────────────────────────────────
 interface NavButtonProps {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   active?: boolean;
   onPress: () => void;
@@ -209,13 +212,9 @@ function NavButton({icon, label, active, onPress}: NavButtonProps) {
       style={styles.navButton}
       onPress={onPress}
       activeOpacity={0.7}>
-      <Text
-        style={[
-          styles.navIcon,
-          {color: active ? Colors.primary : Colors.navInactive},
-        ]}>
+      <View style={styles.navIconContainer}>
         {icon}
-      </Text>
+      </View>
       <Text
         style={[
           styles.navLabel,
@@ -258,25 +257,25 @@ function BottomNav({
     <Animated.View
       style={[styles.bottomNav, {paddingBottom: bottomInset + 8}, animStyle]}>
       <NavButton
-        icon="🏠"
+        icon={<HomeIcon size={26} color={activeTab === 'home' ? Colors.primary : Colors.navInactive} />}
         label="HOME"
         active={activeTab === 'home'}
         onPress={() => onTabChange('home')}
       />
       <NavButton
-        icon="📚"
+        icon={<CollectionIcon size={26} color={activeTab === 'collection' ? Colors.primary : Colors.navInactive} />}
         label="COLLECTION"
         active={activeTab === 'collection'}
         onPress={() => onTabChange('collection')}
       />
       <NavButton
-        icon="📋"
+        icon={<RulesIcon size={26} color={activeTab === 'rules' ? Colors.primary : Colors.navInactive} />}
         label="RULES"
         active={activeTab === 'rules'}
         onPress={() => onTabChange('rules')}
       />
       <NavButton
-        icon="⚙️"
+        icon={<SettingsIcon size={26} color={activeTab === 'settings' ? Colors.primary : Colors.navInactive} />}
         label="SETTINGS"
         active={activeTab === 'settings'}
         onPress={() => onTabChange('settings')}
@@ -297,36 +296,59 @@ function TabPlaceholder({label}: {label: string}) {
 // ─── Home Tab Content ─────────────────────────────────────────────────────────
 function HomeContent() {
   const robotOpacity = useSharedValue(0);
-  const robotTranslateY = useSharedValue(30);
+  const robotScale = useSharedValue(0.5);
+  const robotRotate = useSharedValue(-15);
   const floatY = useSharedValue(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
-    robotOpacity.value = withDelay(300, withSpring(1));
-    robotTranslateY.value = withDelay(
-      300,
-      withSpring(0, {stiffness: 200, damping: 22}),
-    );
-    floatY.value = withRepeat(
-      withSequence(
-        withTiming(-10, {duration: 2000, easing: Easing.inOut(Easing.ease)}),
-        withTiming(0, {duration: 2000, easing: Easing.inOut(Easing.ease)}),
-      ),
-      -1,
-      true,
-    );
+    // Entrance animation with scale and rotation
+    robotOpacity.value = withTiming(1, {duration: 600, easing: Easing.out(Easing.ease)});
+    robotScale.value = withSpring(1, {
+      stiffness: 200,
+      damping: 15,
+      mass: 1,
+    });
+    robotRotate.value = withSpring(0, {
+      stiffness: 180,
+      damping: 12,
+    });
+    
+    // Start floating animation after entrance
+    if (imageLoaded) {
+      setTimeout(() => {
+        floatY.value = withRepeat(
+          withSequence(
+            withTiming(-8, {duration: 2500, easing: Easing.inOut(Easing.ease)}),
+            withTiming(0, {duration: 2500, easing: Easing.inOut(Easing.ease)}),
+          ),
+          -1,
+          true,
+        );
+      }, 600);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [imageLoaded]);
 
   const robotStyle = useAnimatedStyle(() => ({
     opacity: robotOpacity.value,
-    transform: [{translateY: robotTranslateY.value + floatY.value}],
+    transform: [
+      {scale: robotScale.value},
+      {rotate: `${robotRotate.value}deg`},
+      {translateY: floatY.value},
+    ],
   }));
 
   return (
     <View style={styles.homeContent}>
       {/* Gradient overlay behind robot */}
       <LinearGradient
-        colors={['rgba(22,78,99,0)', 'rgba(22,78,99,0.1)', '#0a0c10']}
+        colors={[
+          'rgba(88,28,135,0.2)',
+          'rgba(109,40,217,0.15)',
+          'rgba(15,16,32,0)'
+        ]}
+        locations={[0, 0.5, 1]}
         style={styles.gradientOverlay}
       />
 
@@ -336,11 +358,20 @@ function HomeContent() {
           source={robotImg}
           style={styles.homeRobotImage}
           resizeMode="contain"
+          onLoad={() => setImageLoaded(true)}
+          fadeDuration={0}
         />
       </Animated.View>
 
-      {/* Pink glow under mascot */}
-      <View style={styles.pinkGlow} />
+      {/* Purple-cyan glow under mascot */}
+      <LinearGradient
+        colors={[
+          'rgba(109,40,217,0.3)',
+          'rgba(88,28,135,0.2)',
+          'rgba(15,16,32,0)'
+        ]}
+        style={styles.robotGlow}
+      />
 
       {/* Stat cards */}
       <View style={styles.statsRow}>
@@ -382,7 +413,10 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <ImageBackground
+      source={backgroundImg}
+      style={styles.container}
+      resizeMode="cover">
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <Header insets={insets} />
@@ -412,7 +446,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         onTabChange={setActiveTab}
         bottomInset={insets.bottom}
       />
-    </View>
+    </ImageBackground>
   );
 }
 
@@ -564,14 +598,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  pinkGlow: {
+  robotGlow: {
     position: 'absolute',
-    top: '22%',
+    top: '20%',
     alignSelf: 'center',
-    width: 150,
-    height: 80,
+    width: 200,
+    height: 120,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,0,255,0.2)',
   },
   statsRow: {
     flexDirection: 'row',
@@ -697,10 +730,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 8,
-    gap: 4,
+    gap: 6,
   },
-  navIcon: {
-    fontSize: 24,
+  navIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 28,
   },
   navLabel: {
     fontWeight: '500',

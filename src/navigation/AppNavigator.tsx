@@ -46,7 +46,6 @@ function OnboardingWrapper({navigation}: any) {
 function LoginWrapper({navigation}: any) {
   return (
     <LoginScreen
-      onBack={() => navigation.goBack()}
       onLogin={() => navigation.replace('Home')}
     />
   );
