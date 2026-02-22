@@ -5,12 +5,14 @@ import OnboardingScreen from '../screens/OnboardingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import GameTutorialScreen from '../screens/GameTutorialScreen';
+import PlayerSelectionScreen from '../screens/PlayerSelectionScreen';
 
 export type RootStackParamList = {
   Onboarding: undefined;
   Login: undefined;
   Home: undefined;
   GameTutorial: undefined;
+  PlayerSelection: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -37,6 +39,11 @@ export default function AppNavigator() {
           component={GameTutorialWrapper}
           options={{animation: 'fade'}}
         />
+        <Stack.Screen
+          name="PlayerSelection"
+          component={PlayerSelectionWrapper}
+          options={{animation: 'slide_from_right'}}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -58,7 +65,7 @@ function LoginWrapper({navigation}: any) {
   );
 }
 
-function HomeWrapper({navigation}: any) {
+function HomeWrapper({navigation: _navigation}: any) {
   return (
     <HomeScreen />
   );
@@ -67,8 +74,21 @@ function HomeWrapper({navigation}: any) {
 function GameTutorialWrapper({navigation}: any) {
   return (
     <GameTutorialScreen
-      onComplete={() => navigation.goBack()}
-      onSkip={() => navigation.goBack()}
+      onComplete={() => navigation.navigate('PlayerSelection')}
+      onSkip={() => navigation.navigate('PlayerSelection')}
+    />
+  );
+}
+
+function PlayerSelectionWrapper({navigation}: any) {
+  return (
+    <PlayerSelectionScreen
+      onBack={() => navigation.goBack()}
+      onContinue={(squadSize: number) => {
+        // TODO: Navigate to actual game screen with squadSize
+        console.log('Start game with', squadSize, 'players');
+        navigation.goBack();
+      }}
     />
   );
 }
