@@ -398,7 +398,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       resizeMode="cover">
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      <Header insets={insets} />
+      {activeTab === 'home' && <Header insets={insets} />}
 
       {/* Content area */}
       <View style={styles.contentArea}>
