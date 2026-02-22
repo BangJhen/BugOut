@@ -32,6 +32,8 @@ const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 const robotImg = require('../assets/images/robot_mascot.png');
 const userAvatar = require('../assets/images/user_avatar.png');
 const backgroundImg = require('../assets/images/background.png');
+const collectionIconImg = require('../assets/images/collection-icon.png');
+const rulesIconImg = require('../assets/images/rules-icon.png');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Tab = 'home' | 'collection' | 'rules' | 'settings';
@@ -221,7 +223,6 @@ function NavButton({icon, label, active, onPress}: NavButtonProps) {
         ]}>
         {label}
       </Text>
-      {active && <View style={styles.navIndicator} />}
     </TouchableOpacity>
   );
 }
@@ -262,13 +263,13 @@ function BottomNav({
         onPress={() => onTabChange('home')}
       />
       <NavButton
-        icon={<CollectionIcon size={34} color={activeTab === 'collection' ? Colors.primary : Colors.navInactive} />}
+        icon={<Image source={collectionIconImg} style={{width: 34, height: 34, tintColor: activeTab === 'collection' ? Colors.primary : Colors.navInactive}} />}
         label="COLLECTION"
         active={activeTab === 'collection'}
         onPress={() => onTabChange('collection')}
       />
       <NavButton
-        icon={<RulesIcon size={34} color={activeTab === 'rules' ? Colors.primary : Colors.navInactive} />}
+        icon={<Image source={rulesIconImg} style={{width: 34, height: 34, tintColor: activeTab === 'rules' ? Colors.primary : Colors.navInactive}} />}
         label="RULES"
         active={activeTab === 'rules'}
         onPress={() => onTabChange('rules')}
@@ -727,16 +728,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: -0.45,
     textTransform: 'uppercase',
-  },
-  navIndicator: {
-    width: 32,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: '#ff00ff',
-    shadowColor: '#ff00ff',
-    shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
-    marginTop: 2,
   },
 });
