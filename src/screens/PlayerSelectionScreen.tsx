@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,6 @@ import {
   StatusBar,
   Image,
   ScrollView,
-  Modal,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -66,18 +62,11 @@ function InfoIcon({size = 24, color = '#fff'}: {size?: number; color?: string}) 
 }
 
 // ─── Player Data ──────────────────────────────────────────────────────────────
-interface Player {
-  id: number;
-  name: string;
-  color: string;
-  image: any;
-}
-
-const DEFAULT_PLAYERS: Player[] = [
-  {id: 1, name: 'Player 1', color: '#22d3ee', image: chipBlue},
-  {id: 2, name: 'Player 2', color: '#ef4444', image: chipRed},
-  {id: 3, name: 'Player 3', color: '#eab308', image: chipYellow},
-  {id: 4, name: 'Player 4', color: '#22c55e', image: chipGreen},
+const PLAYERS = [
+  {id: 1, name: 'PLAYER 1', color: '#22d3ee', image: chipBlue},
+  {id: 2, name: 'PLAYER 2', color: '#ef4444', image: chipRed},
+  {id: 3, name: 'PLAYER 3', color: '#eab308', image: chipYellow},
+  {id: 4, name: 'PLAYER 4', color: '#22c55e', image: chipGreen},
 ];
 
 // ─── Header ───────────────────────────────────────────────────────────────────
@@ -162,100 +151,29 @@ function SquadSizeToggle({selectedSize, onSizeChange}: SquadSizeToggleProps) {
   );
 }
 
-// ─── Rename Player Modal ──────────────────────────────────────────────────────
-interface RenamePlayerModalProps {
-  visible: boolean;
-  player: Player | null;
-  onClose: () => void;
-  onSave: (newName: string) => void;
-}
-
-function RenamePlayerModal({visible, player, onClose, onSave}: RenamePlayerModalProps) {
-  const [name, setName] = useState('');
-  const insets = useSafeAreaInsets();
-
-  useEffect(() => {
-    if (player) {
-      setName(player.name);
-    }
-  }, [player]);
-
-  const handleSave = () => {
-    if (name.trim()) {
-      onSave(name.trim());
-    }
-  };
-
-  if (!player) {
-    return null;
-  }
-
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.modalOverlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-        <View style={[styles.modalContent, {marginBottom: insets.bottom + 20}]}>
-          <View style={styles.modalImageContainer}>
-            <Image source={player.image} style={styles.modalPlayerImage} resizeMode="contain" />
-          </View>
-
-          <TextInput
-            style={styles.nameInput}
-            value={name}
-            onChangeText={setName}
-            placeholder="Enter player name"
-            placeholderTextColor="rgba(255,255,255,0.3)"
-            maxLength={20}
-            autoFocus
-            selectTextOnFocus
-          />
-
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={onClose}
-              activeOpacity={0.85}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={handleSave}
-              activeOpacity={0.85}>
-              <Text style={styles.saveButtonText}>Save</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
-  );
-}
-
 // ─── Player Card ──────────────────────────────────────────────────────────────
 interface PlayerCardProps {
-  player: Player;
+  player: typeof PLAYERS[0];
   delay: number;
-  onPress: () => void;
+  shouldExit?: boolean;
 }
 
-function PlayerCard({player, delay, onPress}: PlayerCardProps) {
+function PlayerCard({player, delay, shouldExit = false}: PlayerCardProps) {
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.9);
 
   useEffect(() => {
-    opacity.value = withDelay(delay, withSpring(1));
-    scale.value = withDelay(delay, withSpring(1, {stiffness: 200, damping: 22}));
+    if (shouldExit) {
+      // Fade out animation
+      opacity.value = withSpring(0, {stiffness: 200, damping: 22});
+      scale.value = withSpring(0.8, {stiffness: 200, damping: 22});
+    } else {
+      // Fade in animation
+      opacity.value = withDelay(delay, withSpring(1));
+      scale.value = withDelay(delay, withSpring(1, {stiffness: 200, damping: 22}));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [shouldExit]);
 
   const animStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -263,19 +181,17 @@ function PlayerCard({player, delay, onPress}: PlayerCardProps) {
   }));
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
-      <Animated.View
-        style={[
-          styles.playerCard,
-          {borderColor: player.color},
-          animStyle,
-        ]}>
-        <Text style={styles.playerName}>{player.name}</Text>
-        <View style={styles.playerImageContainer}>
-          <Image source={player.image} style={styles.playerImage} resizeMode="contain" />
-        </View>
-      </Animated.View>
-    </TouchableOpacity>
+    <Animated.View
+      style={[
+        styles.playerCard,
+        {borderColor: player.color},
+        animStyle,
+      ]}>
+      <Text style={styles.playerName}>{player.name}</Text>
+      <View style={styles.playerImageContainer}>
+        <Image source={player.image} style={styles.playerImage} resizeMode="contain" />
+      </View>
+    </Animated.View>
   );
 }
 
@@ -287,32 +203,34 @@ interface PlayerSelectionScreenProps {
 
 export default function PlayerSelectionScreen({onBack, onContinue}: PlayerSelectionScreenProps) {
   const [squadSize, setSquadSize] = useState(1);
-  const [players, setPlayers] = useState<Player[]>(DEFAULT_PLAYERS);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [visiblePlayers, setVisiblePlayers] = useState(1);
+  const [exitingPlayers, setExitingPlayers] = useState<number[]>([]);
+  const prevSquadSizeRef = useRef(1);
   const insets = useSafeAreaInsets();
 
-  const handlePlayerPress = (player: Player) => {
-    setSelectedPlayer(player);
-    setModalVisible(true);
-  };
-
-  const handleSaveName = (newName: string) => {
-    if (selectedPlayer) {
-      setPlayers(prevPlayers =>
-        prevPlayers.map(p =>
-          p.id === selectedPlayer.id ? {...p, name: newName} : p
-        )
-      );
+  useEffect(() => {
+    const prevSize = prevSquadSizeRef.current;
+    
+    if (squadSize < prevSize) {
+      // Squad size decreased - trigger exit animation for removed players
+      const playersToRemove = [];
+      for (let i = squadSize; i < prevSize; i++) {
+        playersToRemove.push(i + 1); // player IDs are 1-indexed
+      }
+      setExitingPlayers(playersToRemove);
+      
+      // Wait for exit animation to complete before updating visible players
+      setTimeout(() => {
+        setVisiblePlayers(squadSize);
+        setExitingPlayers([]);
+      }, 300); // Match animation duration
+    } else {
+      // Squad size increased - show new players immediately
+      setVisiblePlayers(squadSize);
     }
-    setModalVisible(false);
-    setSelectedPlayer(null);
-  };
-
-  const handleCloseModal = () => {
-    setModalVisible(false);
-    setSelectedPlayer(null);
-  };
+    
+    prevSquadSizeRef.current = squadSize;
+  }, [squadSize]);
 
   const handleContinue = () => {
     onContinue(squadSize);
@@ -332,24 +250,16 @@ export default function PlayerSelectionScreen({onBack, onContinue}: PlayerSelect
         <SquadSizeToggle selectedSize={squadSize} onSizeChange={setSquadSize} />
 
         <View style={styles.playersGrid}>
-          {players.slice(0, squadSize).map((player, index) => (
+          {PLAYERS.slice(0, visiblePlayers).map((player, index) => (
             <PlayerCard
               key={player.id}
               player={player}
               delay={300 + index * 100}
-              onPress={() => handlePlayerPress(player)}
+              shouldExit={exitingPlayers.includes(player.id)}
             />
           ))}
         </View>
       </ScrollView>
-
-      {/* Rename Player Modal */}
-      <RenamePlayerModal
-        visible={modalVisible}
-        player={selectedPlayer}
-        onClose={handleCloseModal}
-        onSave={handleSaveName}
-      />
 
       {/* Continue Button */}
       <View style={[styles.bottomSection, {paddingBottom: insets.bottom + 24}]}>
@@ -476,101 +386,6 @@ const styles = StyleSheet.create({
   playerImage: {
     width: '100%',
     height: '100%',
-  },
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-  },
-  modalContent: {
-    width: '85%',
-    maxWidth: 400,
-    backgroundColor: 'rgba(31,41,55,0.95)',
-    borderRadius: 24,
-    borderWidth: 3,
-    borderColor: Colors.primary,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  modalImageContainer: {
-    width: 200,
-    height: 200,
-    marginBottom: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalPlayerImage: {
-    width: '100%',
-    height: '100%',
-  },
-  nameInput: {
-    width: '100%',
-    backgroundColor: 'rgba(15,16,32,0.8)',
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: Colors.primary,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    width: '100%',
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: Colors.primary,
-    borderRadius: 9999,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  cancelButtonText: {
-    fontWeight: '700',
-    fontSize: 16,
-    color: 'white',
-  },
-  saveButton: {
-    flex: 1,
-    backgroundColor: '#22d3ee',
-    borderRadius: 9999,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#22d3ee',
-    shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  saveButtonText: {
-    fontWeight: '700',
-    fontSize: 16,
-    color: 'white',
   },
   // Bottom Section
   bottomSection: {
