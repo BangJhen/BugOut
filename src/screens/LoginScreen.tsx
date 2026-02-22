@@ -31,39 +31,42 @@ const appleIcon = require('../assets/images/apple_icon.png');
 function BackgroundGlows() {
   return (
     <>
+      {/* Large purple/pink glow - center left */}
       <View
         style={[
           styles.glow,
           {
-            width: 400,
-            height: 400,
-            backgroundColor: 'rgba(255,46,149,0.13)',
-            left: -150,
-            top: '35%',
+            width: 500,
+            height: 500,
+            backgroundColor: 'rgba(138,43,226,0.25)',
+            left: -200,
+            top: '30%',
           },
         ]}
       />
+      {/* Pink accent glow - bottom */}
+      <View
+        style={[
+          styles.glow,
+          {
+            width: 350,
+            height: 350,
+            backgroundColor: 'rgba(255,20,147,0.15)',
+            left: -50,
+            bottom: -100,
+          },
+        ]}
+      />
+      {/* Subtle cyan glow - top right */}
       <View
         style={[
           styles.glow,
           {
             width: 250,
             height: 250,
-            backgroundColor: 'rgba(153,255,0,0.06)',
-            left: 20,
-            bottom: -20,
-          },
-        ]}
-      />
-      <View
-        style={[
-          styles.glow,
-          {
-            width: 200,
-            height: 200,
-            backgroundColor: 'rgba(0,240,255,0.06)',
-            left: -100,
-            top: -30,
+            backgroundColor: 'rgba(0,240,255,0.08)',
+            right: -80,
+            top: 100,
           },
         ]}
       />
@@ -92,9 +95,7 @@ function SpeechBubble() {
   return (
     <Animated.View style={[styles.speechBubbleContainer, animStyle]}>
       <View style={styles.speechBubble}>
-        <Text style={styles.speechText}>
-          Hello!, Ready to{'\n'}Play BugOut?
-        </Text>
+        <Text style={styles.speechText}>Hello!, Ready to Play BugOut?</Text>
       </View>
       {/* Tail */}
       <View style={styles.speechTail} />
@@ -248,11 +249,10 @@ function SignUpFooter() {
 
 // ─── Main Login Screen ───────────────────────────────────────────────────────
 interface LoginScreenProps {
-  onBack?: () => void;
   onLogin?: () => void;
 }
 
-export default function LoginScreen({onBack, onLogin}: LoginScreenProps) {
+export default function LoginScreen({onLogin}: LoginScreenProps) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -282,17 +282,6 @@ export default function LoginScreen({onBack, onLogin}: LoginScreenProps) {
         <GuestButton onPress={onLogin} />
         <SignUpFooter />
       </View>
-
-      {/* Back button */}
-      {onBack && (
-        <TouchableOpacity
-          style={[styles.backButton, {top: insets.top + 10}]}
-          onPress={onBack}
-          activeOpacity={0.7}>
-          <Text style={styles.backArrow}>‹</Text>
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 }
@@ -309,8 +298,8 @@ const styles = StyleSheet.create({
   // Speech Bubble
   speechBubbleContainer: {
     position: 'absolute',
-    right: 30,
-    top: SCREEN_HEIGHT * 0.16,
+    right: 32,
+    top: SCREEN_HEIGHT * 0.18,
     zIndex: 10,
   },
   speechBubble: {
@@ -324,7 +313,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 17,
     paddingTop: 13,
     paddingBottom: 14,
-    width: 135,
+    width: 155,
   },
   speechText: {
     fontWeight: '700',
@@ -347,9 +336,9 @@ const styles = StyleSheet.create({
   robotContainer: {
     position: 'absolute',
     alignSelf: 'center',
-    top: SCREEN_HEIGHT * 0.22,
-    width: SCREEN_WIDTH * 0.88,
-    height: SCREEN_HEIGHT * 0.3,
+    top: SCREEN_HEIGHT * 0.25,
+    width: SCREEN_WIDTH * 0.85,
+    height: SCREEN_HEIGHT * 0.32,
   },
   robotImage: {
     width: '100%',
