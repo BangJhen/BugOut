@@ -18,8 +18,9 @@ import Animated, {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Colors} from '../constants/theme';
 
-const backgroundImg = require('../assets/images/background.png');
-const glitchyImg = require('../assets/images/Glitchy.png');
+const backgroundImg = require('../assets/images/backgrounds/background.png');
+const chipImg = require('../assets/images/players/chip-blue.png');
+const glitchyImg = require('../assets/images/characters/Glitchy.png');
 
 // Mock data for characters
 const CHARACTERS = [
@@ -27,7 +28,7 @@ const CHARACTERS = [
     id: '1',
     type: 'CHIP',
     name: 'MegaByte',
-    image: require('../assets/images/robot_mascot.png'),
+    image: require('../assets/images/characters/robot_mascot.png'),
     category: 'chip',
     isUsed: true,
   },

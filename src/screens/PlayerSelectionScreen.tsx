@@ -20,11 +20,11 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Colors} from '../constants/theme';
 import Svg, {Path} from 'react-native-svg';
 
-const backgroundImg = require('../assets/images/background.png');
-const chipBlue = require('../assets/images/chip-blue.png');
-const chipRed = require('../assets/images/chip-red.png');
-const chipYellow = require('../assets/images/chip-yellow.png');
-const chipGreen = require('../assets/images/chip-green.png');
+const backgroundImg = require('../assets/images/backgrounds/background.png');
+const chipBlue = require('../assets/images/players/chip-blue.png');
+const chipRed = require('../assets/images/players/chip-red.png');
+const chipYellow = require('../assets/images/players/chip-yellow.png');
+const chipGreen = require('../assets/images/players/chip-green.png');
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 function BackIcon({size = 24, color = '#fff'}: {size?: number; color?: string}) {

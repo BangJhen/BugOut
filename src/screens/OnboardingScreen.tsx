@@ -18,8 +18,8 @@ import {Colors} from '../constants/theme';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
-const logoImg = require('../assets/images/logo.png');
-const backgroundImg = require('../assets/images/background.png');
+const logoImg = require('../assets/images/backgrounds/logo.png');
+const backgroundImg = require('../assets/images/backgrounds/background.png');
 
 interface LoadingBarProps {
   progress: number;

@@ -32,11 +32,11 @@ import RulesScreen from './RulesScreen';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
-const robotImg = require('../assets/images/robot_mascot.png');
-const userAvatar = require('../assets/images/user_avatar.png');
-const backgroundImg = require('../assets/images/background.png');
-const collectionIconImg = require('../assets/images/collection-icon.png');
-const rulesIconImg = require('../assets/images/rules-icon.png');
+const backgroundImg = require('../assets/images/backgrounds/background.png');
+const robotImg = require('../assets/images/characters/robot_mascot.png');
+const userAvatar = require('../assets/images/icons/user_avatar.png');
+const collectionIconImg = require('../assets/images/icons/collection-icon.png');
+const rulesIconImg = require('../assets/images/icons/rules-icon.png');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Tab = 'home' | 'collection' | 'rules' | 'settings';

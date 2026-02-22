@@ -20,12 +20,12 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Colors} from '../constants/theme';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
-const backgroundImg = require('../assets/images/background.png');
-const step1Img = require('../assets/images/step1-image.png');
-const step2Img = require('../assets/images/step2-image.png');
-const step3Img = require('../assets/images/step3-image.png');
-const step4Img = require('../assets/images/step4-image.png');
-const step5Img = require('../assets/images/step5-image.png');
+const backgroundImg = require('../assets/images/backgrounds/background.png');
+const step1Img = require('../assets/images/tutorial/step1-image.png');
+const step2Img = require('../assets/images/tutorial/step2-image.png');
+const step3Img = require('../assets/images/tutorial/step3-image.png');
+const step4Img = require('../assets/images/tutorial/step4-image.png');
+const step5Img = require('../assets/images/tutorial/step5-image.png');
 
 // ─── Tutorial Data ────────────────────────────────────────────────────────────
 const TUTORIAL_STEPS = [

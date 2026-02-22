@@ -24,10 +24,11 @@ import {Colors} from '../constants/theme';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
-const robotImg = require('../assets/images/robot_mascot.png');
-const googleIcon = require('../assets/images/google_icon.png');
-const appleIcon = require('../assets/images/apple_icon.png');
-const backgroundImg = require('../assets/images/background.png');
+const backgroundImg = require('../assets/images/backgrounds/background.png');
+const logoImg = require('../assets/images/backgrounds/logo.png');
+const googleIcon = require('../assets/images/icons/google_icon.png');
+const appleIcon = require('../assets/images/icons/apple_icon.png');
+const robotImg = require('../assets/images/characters/robot_mascot.png');
 
 // ─── Speech Bubble ────────────────────────────────────────────────────────────
 function SpeechBubble() {

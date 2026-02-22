@@ -21,8 +21,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../constants/theme';
 import Svg, {Path, Circle} from 'react-native-svg';
 
-const backgroundImg = require('../assets/images/background.png');
-const userAvatar = require('../assets/images/user_avatar.png');
+const backgroundImg = require('../assets/images/backgrounds/background.png');
+const userAvatar = require('../assets/images/icons/user_avatar.png');
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 function NotificationOffIcon({size = 20, color = '#fff'}: {size?: number; color?: string}) {

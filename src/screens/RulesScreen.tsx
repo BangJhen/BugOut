@@ -19,7 +19,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Colors} from '../constants/theme';
 import Svg, {Path} from 'react-native-svg';
 
-const backgroundImg = require('../assets/images/background.png');
+const backgroundImg = require('../assets/images/backgrounds/background.png');
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 function SearchIcon({size = 20, color = '#fff'}: {size?: number; color?: string}) {
