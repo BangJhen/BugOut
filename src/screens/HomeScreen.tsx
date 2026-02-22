@@ -325,17 +325,6 @@ function HomeContent() {
 
   return (
     <View style={styles.homeContent}>
-      {/* Gradient overlay behind robot */}
-      <LinearGradient
-        colors={[
-          'rgba(22,78,99,0)',
-          'rgba(10,12,16,0.3)',
-          'rgba(10,12,16,0.8)',
-        ]}
-        locations={[0, 0.4, 1]}
-        style={styles.gradientOverlay}
-      />
-
       {/* Robot mascot with decorative frame */}
       <View style={styles.robotFrame}>
         {/* Circular glow background */}
@@ -564,14 +553,6 @@ const styles = StyleSheet.create({
   // Home Content
   homeContent: {
     flex: 1,
-  },
-  gradientOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: -6,
-    right: 0,
-    height: SCREEN_HEIGHT * 0.42,
-    zIndex: 0,
   },
   robotFrame: {
     alignSelf: 'center',
