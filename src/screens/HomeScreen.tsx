@@ -151,6 +151,11 @@ function PlayButton() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   
   const handlePlayPress = async () => {
+    // Temporarily disabled first-time user check for testing
+    // Always show tutorial when Play button is pressed
+    navigation.navigate('GameTutorial');
+    
+    /* Original first-time user logic (commented out for testing):
     try {
       const hasSeenTutorial = await AsyncStorage.getItem('hasSeenGameTutorial');
       
@@ -166,6 +171,7 @@ function PlayButton() {
     } catch (error) {
       console.error('Error checking tutorial status:', error);
     }
+    */
   };
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(28);
