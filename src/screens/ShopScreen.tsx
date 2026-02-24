@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Path} from 'react-native-svg';
-import LinearGradient from 'react-native-linear-gradient';
 
 const backgroundImg = require('../assets/images/backgrounds/background.png');
 const coinIcon = require('../assets/images/icons/money.png');

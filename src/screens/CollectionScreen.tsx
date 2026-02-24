@@ -22,7 +22,6 @@ import {RootStackParamList} from '../navigation/AppNavigator';
 import {Colors} from '../constants/theme';
 
 const backgroundImg = require('../assets/images/backgrounds/background.png');
-const chipImg = require('../assets/images/players/chip-blue.png');
 const glitchyImg = require('../assets/images/characters/Glitchy.png');
 
 // Mock data for characters
