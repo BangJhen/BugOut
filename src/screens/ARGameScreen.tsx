@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  Animated,
 } from 'react-native';
 import {
   ViroARSceneNavigator,
@@ -16,37 +17,54 @@ import {
   ViroNode,
 } from '@reactvision/react-viro';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import Svg, {Path} from 'react-native-svg';
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
+function CloseIcon({size = 24}: {size?: number}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M18 6L6 18M6 6l12 12"
+        stroke="#fff"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+function CameraIcon({size = 24}: {size?: number}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+        stroke="#fff"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
+        stroke="#fff"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
 
 // ─── AR Scene Component ───────────────────────────────────────────────────────
 function ARGameScene() {
-  const [text, setText] = React.useState('Initializing AR...');
-
-  const onInitialized = (state: any, _reason: any) => {
-    if (state === 3) {
-      setText('AR Ready! Look for a surface');
-    } else if (state === 2) {
-      setText('Limited tracking - move device');
-    }
-  };
-
   return (
-    <ViroARScene onTrackingUpdated={onInitialized}>
+    <ViroARScene>
       <ViroAmbientLight color="#FFFFFF" intensity={200} />
-
-      <ViroText
-        text={text}
-        scale={[0.5, 0.5, 0.5]}
-        position={[0, 0, -1]}
-        width={4}
-        height={1}
-      />
-
       <ViroARPlaneSelector>
         <ViroNode position={[0, 0, 0]}>
           <ViroBox
             position={[0, 0.1, 0]}
             scale={[0.2, 0.2, 0.2]}
-            onClick={() => setText('Box clicked!')}
           />
         </ViroNode>
       </ViroARPlaneSelector>
@@ -61,11 +79,30 @@ interface ARGameScreenProps {
 
 export default function ARGameScreen({onBack}: ARGameScreenProps) {
   const insets = useSafeAreaInsets();
+  const pulseAnim = React.useRef(new Animated.Value(1)).current;
+
+  React.useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.2,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [pulseAnim]);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
+      {/* AR Camera View */}
       <ViroARSceneNavigator
         autofocus={true}
         initialScene={{
@@ -74,22 +111,57 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
         style={styles.arScene}
       />
 
-      <View style={[styles.backButtonContainer, {top: insets.top + 14}]}>
+      {/* Dark Overlay */}
+      <View style={styles.overlay} />
+
+      {/* Header */}
+      <View style={[styles.header, {paddingTop: insets.top + 14}]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={styles.iconButton}
           onPress={onBack}
           activeOpacity={0.7}>
-          <Text style={styles.backButtonText}>← Back</Text>
+          <CloseIcon size={16} />
+        </TouchableOpacity>
+
+        <View style={styles.statusContainer}>
+          <View style={styles.statusRow}>
+            <Animated.View style={[styles.statusDot, {transform: [{scale: pulseAnim}]}]} />
+            <Text style={styles.statusText}>SCANNING...</Text>
+          </View>
+          <Text style={styles.statusSubtext}>PROCESSING BOARD</Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.iconButton}
+          activeOpacity={0.7}>
+          <CameraIcon size={20} />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.instructionsContainer}>
-        <Text style={styles.instructionsText}>
-          Move your device to detect surfaces
-        </Text>
-        <Text style={styles.instructionsSubtext}>
-          Tap the box to interact
-        </Text>
+      {/* Scanning Frame */}
+      <View style={styles.scanningFrame}>
+        {/* Top Left Corner */}
+        <View style={[styles.corner, styles.cornerTopLeft]} />
+        {/* Top Right Corner */}
+        <View style={[styles.corner, styles.cornerTopRight]} />
+        {/* Bottom Left Corner */}
+        <View style={[styles.corner, styles.cornerBottomLeft]} />
+        {/* Bottom Right Corner */}
+        <View style={[styles.corner, styles.cornerBottomRight]} />
+      </View>
+
+      {/* Decorative Dots */}
+      <View style={styles.dot1} />
+      <View style={styles.dot2} />
+      <View style={styles.dot3} />
+
+      {/* Confirm Button */}
+      <View style={[styles.buttonContainer, {bottom: insets.bottom + 40}]}>
+        <TouchableOpacity
+          style={styles.confirmButton}
+          activeOpacity={0.85}>
+          <Text style={styles.confirmButtonText}>Confirm Board</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -99,57 +171,164 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#252748',
   },
   arScene: {
     flex: 1,
   },
-  backButtonContainer: {
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 16, 32, 0.3)',
+  },
+  header: {
     position: 'absolute',
-    left: 24,
-    zIndex: 10,
-  },
-  backButton: {
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  backButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-  },
-  instructionsContainer: {
-    position: 'absolute',
-    bottom: 40,
+    top: 0,
     left: 0,
     right: 0,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 24,
+    paddingBottom: 16,
+    zIndex: 10,
   },
-  instructionsText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Outfit-Bold',
-    textAlign: 'center',
-    marginBottom: 8,
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: {width: 0, height: 2},
-    textShadowRadius: 4,
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  instructionsSubtext: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+  statusContainer: {
+    alignItems: 'center',
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#22d3ee',
+  },
+  statusText: {
+    fontSize: 20,
+    fontWeight: '800',
+    fontFamily: 'Outfit-ExtraBold',
+    color: '#22d3ee',
+    letterSpacing: 4,
+    textShadowColor: 'rgba(34, 211, 238, 0.8)',
+    textShadowOffset: {width: 0, height: 0},
+    textShadowRadius: 10,
+  },
+  statusSubtext: {
+    fontSize: 10,
     fontWeight: '600',
     fontFamily: 'Outfit-SemiBold',
-    textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: {width: 0, height: 1},
-    textShadowRadius: 3,
+    color: 'rgba(255, 255, 255, 0.5)',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  scanningFrame: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 288,
+    height: 442,
+    marginLeft: -144,
+    marginTop: -221,
+  },
+  corner: {
+    position: 'absolute',
+    width: 48,
+    height: 48,
+  },
+  cornerTopLeft: {
+    top: 0,
+    left: 0,
+    borderTopWidth: 10,
+    borderLeftWidth: 10,
+    borderColor: '#24b8cf',
+    borderTopLeftRadius: 16,
+  },
+  cornerTopRight: {
+    top: 0,
+    right: 0,
+    borderTopWidth: 10,
+    borderRightWidth: 10,
+    borderColor: '#24b8cf',
+    borderTopRightRadius: 16,
+  },
+  cornerBottomLeft: {
+    bottom: 0,
+    left: 0,
+    borderBottomWidth: 10,
+    borderLeftWidth: 10,
+    borderColor: '#24b8cf',
+    borderBottomLeftRadius: 16,
+  },
+  cornerBottomRight: {
+    bottom: 0,
+    right: 0,
+    borderBottomWidth: 10,
+    borderRightWidth: 10,
+    borderColor: '#24b8cf',
+    borderBottomRightRadius: 16,
+  },
+  dot1: {
+    position: 'absolute',
+    top: '40%',
+    left: '35%',
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#22d3ee',
+  },
+  dot2: {
+    position: 'absolute',
+    bottom: '35%',
+    right: '30%',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#4ade80',
+  },
+  dot3: {
+    position: 'absolute',
+    top: '50%',
+    right: '25%',
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#22d3ee',
+    opacity: 0.5,
+  },
+  buttonContainer: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    alignItems: 'center',
+  },
+  confirmButton: {
+    width: '100%',
+    maxWidth: 382,
+    height: 72,
+    backgroundColor: '#24b8cf',
+    borderRadius: 74,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  confirmButtonText: {
+    fontSize: 20,
+    fontWeight: '700',
+    fontFamily: 'Outfit-Bold',
+    color: '#fff',
   },
 });
