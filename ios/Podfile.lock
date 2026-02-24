@@ -2700,6 +2700,13 @@ PODS:
     - Yoga
   - SocketRocket (0.7.1)
   - SwiftAudioEx (1.1.0)
+  - ViroKit (1.0):
+    - React
+  - ViroReact (2.52.1):
+    - React-Core
+    - React-Fabric
+    - React-FabricComponents
+    - React-RCTFabric
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -2784,6 +2791,8 @@ DEPENDENCIES:
   - RNSVG (from `../node_modules/react-native-svg`)
   - RNWorklets (from `../node_modules/react-native-worklets`)
   - SocketRocket (~> 0.7.1)
+  - "ViroKit (from `../node_modules/@reactvision/react-viro/ios/dist/ViroRenderer/`)"
+  - "ViroReact (from `../node_modules/@reactvision/react-viro/ios/`)"
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -2951,6 +2960,10 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-svg"
   RNWorklets:
     :path: "../node_modules/react-native-worklets"
+  ViroKit:
+    :path: "../node_modules/@reactvision/react-viro/ios/dist/ViroRenderer/"
+  ViroReact:
+    :path: "../node_modules/@reactvision/react-viro/ios/"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -3036,8 +3049,10 @@ SPEC CHECKSUMS:
   RNWorklets: ca03ce776c15a592ef0700386071466810c41ea0
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   SwiftAudioEx: f6aa653770f3a0d3851edaf8d834a30aee4a7646
+  ViroKit: c9c10b089da06a10bb357079729cd7181161b3f8
+  ViroReact: 65fcff3c9615a9355f61add61613d3bfafd6d2df
   Yoga: a3ed390a19db0459bd6839823a6ac6d9c6db198d
 
-PODFILE CHECKSUM: 663a300a0e323edacd5168d52cb7fb4cd494f954
+PODFILE CHECKSUM: 69c56ff63fcad59c6e34e11948bb2d476d386603
 
 COCOAPODS: 1.16.2
