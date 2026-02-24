@@ -168,8 +168,8 @@ function ShopItemCard({item, onPress}: ShopItemCardProps) {
 
       {/* Lock Overlay */}
       {item.locked && (
-        <View style={styles.lockOverlay}>
-          <LockIcon size={32} />
+        <View style={[styles.lockOverlay, {transform: [{translateX: -12}, {translateY: -20}]}]}>
+          <LockIcon size={24} />
           <Text style={styles.lockedText}>LOCKED</Text>
         </View>
       )}
@@ -507,7 +507,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     left: '50%',
-    transform: [{translateX: -40}, {translateY: -30}],
     alignItems: 'center',
     gap: 8,
   },
