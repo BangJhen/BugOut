@@ -129,7 +129,7 @@ interface GameTutorialScreenProps {
 
 export default function GameTutorialScreen({onComplete, onSkip}: GameTutorialScreenProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<any>(null);
   const insets = useSafeAreaInsets();
 
   const handleNext = () => {
@@ -167,7 +167,7 @@ export default function GameTutorialScreen({onComplete, onSkip}: GameTutorialScr
       <FlatList
         ref={flatListRef}
         data={TUTORIAL_STEPS}
-        renderItem={({item, index}) => <TutorialSlide item={item} index={index} />}
+        renderItem={({item}) => <TutorialSlide item={item} />}
         keyExtractor={item => item.id}
         horizontal
         pagingEnabled
