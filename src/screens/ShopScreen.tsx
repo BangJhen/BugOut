@@ -13,7 +13,7 @@ import Svg, {Path} from 'react-native-svg';
 import LinearGradient from 'react-native-linear-gradient';
 
 const backgroundImg = require('../assets/images/backgrounds/background.png');
-const coinIcon = require('../assets/images/players/chip-blue.png');
+const coinIcon = require('../assets/images/icons/money.png');
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 function BackIcon({size = 24, color = '#fff'}: {size?: number; color?: string}) {
