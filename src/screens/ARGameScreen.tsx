@@ -1,84 +1,16 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  ImageBackground,
 } from 'react-native';
-import {
-  ViroARSceneNavigator,
-  ViroARScene,
-  ViroText,
-  ViroBox,
-  ViroAmbientLight,
-  ViroSpotLight,
-  ViroARPlaneSelector,
-  ViroNode,
-} from '@reactvision/react-viro';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import LinearGradient from 'react-native-linear-gradient';
 
-// ─── AR Scene Component ───────────────────────────────────────────────────────
-function ARGameScene() {
-  const [text, setText] = useState('Tap to place objects!');
-
-  const onInitialized = (state: any, _reason: any) => {
-    if (state === 3) {
-      // ViroARTrackingState.TRACKING_NORMAL
-      setText('AR is ready! Look for a surface');
-    } else if (state === 2) {
-      // ViroARTrackingState.TRACKING_LIMITED
-      setText('Limited tracking - move your device');
-    }
-  };
-
-  return (
-    <ViroARScene onTrackingUpdated={onInitialized}>
-      {/* Ambient Light */}
-      <ViroAmbientLight color="#FFFFFF" intensity={200} />
-
-      {/* Spotlight */}
-      <ViroSpotLight
-        innerAngle={5}
-        outerAngle={45}
-        direction={[0, -1, -0.2]}
-        position={[0, 3, 0]}
-        color="#FFFFFF"
-        castsShadow={true}
-        intensity={500}
-      />
-
-      {/* AR Text */}
-      <ViroText
-        text={text}
-        scale={[0.5, 0.5, 0.5]}
-        position={[0, 0, -1]}
-        style={styles.arText}
-      />
-
-      {/* AR Plane Selector - detects horizontal surfaces */}
-      <ViroARPlaneSelector>
-        <ViroNode position={[0, 0, 0]}>
-          {/* 3D Box on detected plane */}
-          <ViroBox
-            position={[0, 0.1, 0]}
-            scale={[0.2, 0.2, 0.2]}
-            materials={['grid']}
-            onClick={() => setText('Box clicked!')}
-          />
-
-          {/* Another box */}
-          <ViroBox
-            position={[0.3, 0.1, 0]}
-            scale={[0.15, 0.15, 0.15]}
-            materials={['grid']}
-            onClick={() => setText('Second box clicked!')}
-          />
-        </ViroNode>
-      </ViroARPlaneSelector>
-    </ViroARScene>
-  );
-}
+const backgroundImg = require('../assets/images/backgrounds/background.png');
 
 // ─── Main AR Game Screen ──────────────────────────────────────────────────────
 interface ARGameScreenProps {
@@ -89,19 +21,10 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <ImageBackground source={backgroundImg} style={styles.container} resizeMode="cover">
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* AR Scene Navigator */}
-      <ViroARSceneNavigator
-        autofocus={true}
-        initialScene={{
-          scene: ARGameScene,
-        }}
-        style={styles.arScene}
-      />
-
-      {/* Back Button Overlay */}
+      {/* Back Button */}
       <View style={[styles.backButtonContainer, {top: insets.top + 14}]}>
         <TouchableOpacity
           style={styles.backButton}
@@ -111,16 +34,28 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
         </TouchableOpacity>
       </View>
 
-      {/* Instructions Overlay */}
-      <View style={styles.instructionsContainer}>
-        <Text style={styles.instructionsText}>
-          Move your device to detect surfaces
-        </Text>
-        <Text style={styles.instructionsSubtext}>
-          Objects will appear on detected planes
-        </Text>
+      {/* AR Coming Soon Content */}
+      <View style={styles.contentContainer}>
+        <LinearGradient
+          colors={['rgba(139, 0, 139, 0.3)', 'rgba(255, 0, 255, 0.3)']}
+          style={styles.card}>
+          <Text style={styles.title}>🎮 AR Game Mode</Text>
+          <Text style={styles.subtitle}>Coming Soon!</Text>
+          
+          <View style={styles.featuresList}>
+            <Text style={styles.featureItem}>📱 Scan physical cards</Text>
+            <Text style={styles.featureItem}>🎯 Place 3D characters on surfaces</Text>
+            <Text style={styles.featureItem}>⚡ Real-time AR battles</Text>
+            <Text style={styles.featureItem}>🎨 Interactive AR effects</Text>
+          </View>
+
+          <Text style={styles.note}>
+            AR functionality requires additional setup.
+            Stay tuned for updates!
+          </Text>
+        </LinearGradient>
       </View>
-    </View>
+    </ImageBackground>
   );
 }
 
@@ -128,17 +63,6 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
-  },
-  arScene: {
-    flex: 1,
-  },
-  arText: {
-    fontFamily: 'Outfit-Bold',
-    fontSize: 20,
-    color: '#FFFFFF',
-    textAlignVertical: 'center',
-    textAlign: 'center',
   },
   backButtonContainer: {
     position: 'absolute',
@@ -159,33 +83,55 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontFamily: 'Outfit-Bold',
   },
-  instructionsContainer: {
-    position: 'absolute',
-    bottom: 40,
-    left: 0,
-    right: 0,
+  contentContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
   },
-  instructionsText: {
+  card: {
+    width: '100%',
+    maxWidth: 400,
+    padding: 32,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#ff00ff',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '800',
+    fontFamily: 'Outfit-ExtraBold',
     color: '#fff',
-    fontSize: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 24,
     fontWeight: '700',
     fontFamily: 'Outfit-Bold',
+    color: '#ff00ff',
+    marginBottom: 32,
     textAlign: 'center',
-    marginBottom: 8,
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: {width: 0, height: 2},
-    textShadowRadius: 4,
   },
-  instructionsSubtext: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+  featuresList: {
+    width: '100%',
+    marginBottom: 32,
+    gap: 16,
+  },
+  featureItem: {
+    fontSize: 16,
     fontWeight: '600',
     fontFamily: 'Outfit-SemiBold',
+    color: '#fff',
+    textAlign: 'left',
+  },
+  note: {
+    fontSize: 14,
+    fontWeight: '500',
+    fontFamily: 'Outfit-Medium',
+    color: 'rgba(255, 255, 255, 0.7)',
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: {width: 0, height: 1},
-    textShadowRadius: 3,
+    lineHeight: 20,
   },
 });
