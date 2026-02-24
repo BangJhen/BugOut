@@ -16,6 +16,9 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {RootStackParamList} from '../navigation/AppNavigator';
 import {Colors} from '../constants/theme';
 
 const backgroundImg = require('../assets/images/backgrounds/background.png');
@@ -189,6 +192,7 @@ function CharacterCard({character, index}: CharacterCardProps) {
 
 // ─── Shop Button ──────────────────────────────────────────────────────────────
 function ShopButton() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.8);
 
@@ -203,9 +207,13 @@ function ShopButton() {
     transform: [{scale: scale.value}],
   }));
 
+  const handleShopPress = () => {
+    navigation.navigate('Shop');
+  };
+
   return (
     <Animated.View style={[styles.shopButtonContainer, animStyle]}>
-      <TouchableOpacity style={styles.shopButton} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.shopButton} activeOpacity={0.85} onPress={handleShopPress}>
         <ShoppingBagIcon size={20} color="white" />
         <Text style={styles.shopButtonText}>Shop</Text>
       </TouchableOpacity>

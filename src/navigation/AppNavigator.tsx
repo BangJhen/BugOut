@@ -6,6 +6,7 @@ import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import GameTutorialScreen from '../screens/GameTutorialScreen';
 import PlayerSelectionScreen from '../screens/PlayerSelectionScreen';
+import ShopScreen from '../screens/ShopScreen';
 
 export type RootStackParamList = {
   Onboarding: undefined;
@@ -13,6 +14,7 @@ export type RootStackParamList = {
   Home: undefined;
   GameTutorial: undefined;
   PlayerSelection: undefined;
+  Shop: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -42,6 +44,11 @@ export default function AppNavigator() {
         <Stack.Screen
           name="PlayerSelection"
           component={PlayerSelectionWrapper}
+          options={{animation: 'slide_from_right'}}
+        />
+        <Stack.Screen
+          name="Shop"
+          component={ShopWrapper}
           options={{animation: 'slide_from_right'}}
         />
       </Stack.Navigator>
@@ -89,6 +96,14 @@ function PlayerSelectionWrapper({navigation}: any) {
         console.log('Start game with', squadSize, 'players');
         navigation.goBack();
       }}
+    />
+  );
+}
+
+function ShopWrapper({navigation}: any) {
+  return (
+    <ShopScreen
+      onBack={() => navigation.goBack()}
     />
   );
 }
