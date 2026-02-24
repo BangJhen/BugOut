@@ -7,6 +7,7 @@ import HomeScreen from '../screens/HomeScreen';
 import GameTutorialScreen from '../screens/GameTutorialScreen';
 import PlayerSelectionScreen from '../screens/PlayerSelectionScreen';
 import ShopScreen from '../screens/ShopScreen';
+import ARGameScreen from '../screens/ARGameScreen';
 
 export type RootStackParamList = {
   Onboarding: undefined;
@@ -15,6 +16,7 @@ export type RootStackParamList = {
   GameTutorial: undefined;
   PlayerSelection: undefined;
   Shop: undefined;
+  ARGame: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -50,6 +52,11 @@ export default function AppNavigator() {
           name="Shop"
           component={ShopWrapper}
           options={{animation: 'slide_from_right'}}
+        />
+        <Stack.Screen
+          name="ARGame"
+          component={ARGameWrapper}
+          options={{animation: 'fade'}}
         />
       </Stack.Navigator>
     </NavigationContainer>
@@ -92,9 +99,8 @@ function PlayerSelectionWrapper({navigation}: any) {
     <PlayerSelectionScreen
       onBack={() => navigation.goBack()}
       onContinue={(squadSize: number) => {
-        // TODO: Navigate to actual game screen with squadSize
-        console.log('Start game with', squadSize, 'players');
-        navigation.goBack();
+        console.log('Start AR game with', squadSize, 'players');
+        navigation.navigate('ARGame');
       }}
     />
   );
@@ -103,6 +109,14 @@ function PlayerSelectionWrapper({navigation}: any) {
 function ShopWrapper({navigation}: any) {
   return (
     <ShopScreen
+      onBack={() => navigation.goBack()}
+    />
+  );
+}
+
+function ARGameWrapper({navigation}: any) {
+  return (
+    <ARGameScreen
       onBack={() => navigation.goBack()}
     />
   );
