@@ -72,14 +72,20 @@ interface ARGameSceneProps {
 
 function ARGameScene({onMarkerFound, onMarkerLost}: ARGameSceneProps) {
   const modelScale: [number, number, number] = [0.15, 0.15, 0.15];
+  const [pauseUpdates, setPauseUpdates] = React.useState(false);
 
   const handleAnchorFound = () => {
     console.log('Arena marker found!');
+    // Lock position after marker is detected
+    setTimeout(() => {
+      setPauseUpdates(true);
+    }, 500); // Wait 500ms for stable detection
     onMarkerFound();
   };
 
   const handleAnchorRemoved = () => {
     console.log('Arena marker lost!');
+    setPauseUpdates(false); // Resume updates when marker lost
     onMarkerLost();
   };
 
@@ -98,7 +104,8 @@ function ARGameScene({onMarkerFound, onMarkerLost}: ARGameSceneProps) {
       <ViroARImageMarker
         target="arena"
         onAnchorFound={handleAnchorFound}
-        onAnchorRemoved={handleAnchorRemoved}>
+        onAnchorRemoved={handleAnchorRemoved}
+        pauseUpdates={pauseUpdates}>
         {/* 3D Character Model - Positioned directly on marker */}
         <Viro3DObject
           source={require('../assets/models/chip_character.glb')}
