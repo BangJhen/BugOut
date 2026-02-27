@@ -72,7 +72,7 @@ interface ARGameSceneProps {
 }
 
 function ARGameScene({onMarkerFound, onMarkerLost}: ARGameSceneProps) {
-  const modelScale: [number, number, number] = [0.05, 0.05, 0.05];
+  const modelScale: [number, number, number] = [0.15, 0.15, 0.15];
 
   const handleAnchorFound = () => {
     console.log('Arena marker found!');
