@@ -55,12 +55,30 @@ function CameraIcon({size = 24}: {size?: number}) {
   );
 }
 
-// Register AR Image Target
+// Register AR Image Targets
 ViroARTrackingTargets.createTargets({
   arena: {
     source: require('../assets/images/markers/arena.png'),
     orientation: 'Up',
-    physicalWidth: 0.18, // 18cm in meters - optimized for better tracking
+    physicalWidth: 0.18,
+    type: 'Image',
+  },
+  firewall: {
+    source: require('../assets/images/markers/firewall.png'),
+    orientation: 'Up',
+    physicalWidth: 0.18,
+    type: 'Image',
+  },
+  portal: {
+    source: require('../assets/images/markers/portal.png'),
+    orientation: 'Up',
+    physicalWidth: 0.18,
+    type: 'Image',
+  },
+  startBase: {
+    source: require('../assets/images/markers/start-base1.png'),
+    orientation: 'Up',
+    physicalWidth: 0.18,
     type: 'Image',
   },
 });
@@ -102,22 +120,63 @@ function ARGameScene({onMarkerFound, onMarkerLost}: ARGameSceneProps) {
         castsShadow={true}
       />
 
-      {/* AR Image Marker Detection */}
+      {/* AR Image Marker Detection - Arena */}
       <ViroARImageMarker
         target="arena"
         onAnchorFound={handleAnchorFound}
         onAnchorUpdated={handleAnchorUpdated}
         onAnchorRemoved={handleAnchorRemoved}>
-        {/* 3D Character Model - Floating above marker */}
         <Viro3DObject
           source={require('../assets/models/chip_character.glb')}
           type="GLB"
           position={[-0.02, 0.05, 0]}
           scale={modelScale}
           rotation={[0, 0, 0]}
-          onLoadStart={() => console.log('Loading 3D model...')}
-          onLoadEnd={() => console.log('3D model loaded!')}
-          onError={(error) => console.error('3D model error:', error)}
+        />
+      </ViroARImageMarker>
+
+      {/* AR Image Marker Detection - Firewall */}
+      <ViroARImageMarker
+        target="firewall"
+        onAnchorFound={handleAnchorFound}
+        onAnchorUpdated={handleAnchorUpdated}
+        onAnchorRemoved={handleAnchorRemoved}>
+        <Viro3DObject
+          source={require('../assets/models/chip_character.glb')}
+          type="GLB"
+          position={[-0.02, 0.05, 0]}
+          scale={modelScale}
+          rotation={[0, 0, 0]}
+        />
+      </ViroARImageMarker>
+
+      {/* AR Image Marker Detection - Portal */}
+      <ViroARImageMarker
+        target="portal"
+        onAnchorFound={handleAnchorFound}
+        onAnchorUpdated={handleAnchorUpdated}
+        onAnchorRemoved={handleAnchorRemoved}>
+        <Viro3DObject
+          source={require('../assets/models/chip_character.glb')}
+          type="GLB"
+          position={[-0.02, 0.05, 0]}
+          scale={modelScale}
+          rotation={[0, 0, 0]}
+        />
+      </ViroARImageMarker>
+
+      {/* AR Image Marker Detection - Start Base */}
+      <ViroARImageMarker
+        target="startBase"
+        onAnchorFound={handleAnchorFound}
+        onAnchorUpdated={handleAnchorUpdated}
+        onAnchorRemoved={handleAnchorRemoved}>
+        <Viro3DObject
+          source={require('../assets/models/chip_character.glb')}
+          type="GLB"
+          position={[-0.02, 0.05, 0]}
+          scale={modelScale}
+          rotation={[0, 0, 0]}
         />
       </ViroARImageMarker>
     </ViroARScene>
@@ -179,7 +238,7 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
       {/* AR Camera View */}
       <ViroARSceneNavigator
         autofocus={true}
-        numberOfTrackedImages={1}
+        numberOfTrackedImages={4}
         initialScene={{
           scene: ARGameScene,
           passProps: {
