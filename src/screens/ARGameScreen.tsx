@@ -74,9 +74,16 @@ interface ARGameSceneProps {
 function ARGameScene({onMarkerFound, onMarkerLost}: ARGameSceneProps) {
   const modelScale: [number, number, number] = [0.15, 0.15, 0.15];
 
-  const handleAnchorFound = () => {
+  const handleAnchorFound = (anchor: any) => {
     console.log('Arena marker found!');
+    console.log('Anchor position:', anchor.position);
+    console.log('Anchor rotation:', anchor.rotation);
+    console.log('Anchor type:', anchor.type);
     onMarkerFound();
+  };
+
+  const handleAnchorUpdated = (anchor: any) => {
+    console.log('Anchor updated - Position:', anchor.position);
   };
 
   const handleAnchorRemoved = () => {
@@ -99,12 +106,13 @@ function ARGameScene({onMarkerFound, onMarkerLost}: ARGameSceneProps) {
       <ViroARImageMarker
         target="arena"
         onAnchorFound={handleAnchorFound}
+        onAnchorUpdated={handleAnchorUpdated}
         onAnchorRemoved={handleAnchorRemoved}>
         {/* 3D Character Model - Floating above marker */}
         <Viro3DObject
           source={require('../assets/models/chip_character.glb')}
           type="GLB"
-          position={[0, 0.1, 0]}
+          position={[0, 0.05, 0]}
           scale={modelScale}
           rotation={[0, 0, 0]}
           onLoadStart={() => console.log('Loading 3D model...')}
