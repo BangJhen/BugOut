@@ -10,10 +10,11 @@ import {
 import {
   ViroARSceneNavigator,
   ViroARScene,
-  ViroText,
-  ViroBox,
+  ViroARImageMarker,
+  ViroARTrackingTargets,
+  Viro3DObject,
   ViroAmbientLight,
-  ViroARPlaneSelector,
+  ViroDirectionalLight,
   ViroNode,
 } from '@reactvision/react-viro';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -55,19 +56,64 @@ function CameraIcon({size = 24}: {size?: number}) {
   );
 }
 
+// Register AR Image Target
+ViroARTrackingTargets.createTargets({
+  arena: {
+    source: require('../assets/images/markers/arena.png'),
+    orientation: 'Up',
+    physicalWidth: 0.2, // 20cm in meters
+  },
+});
+
 // ─── AR Scene Component ───────────────────────────────────────────────────────
-function ARGameScene() {
+interface ARGameSceneProps {
+  onMarkerFound: () => void;
+  onMarkerLost: () => void;
+}
+
+function ARGameScene({onMarkerFound, onMarkerLost}: ARGameSceneProps) {
+  const modelScale: [number, number, number] = [0.05, 0.05, 0.05];
+
+  const handleAnchorFound = () => {
+    console.log('Arena marker found!');
+    onMarkerFound();
+  };
+
+  const handleAnchorRemoved = () => {
+    console.log('Arena marker lost!');
+    onMarkerLost();
+  };
+
   return (
     <ViroARScene>
-      <ViroAmbientLight color="#FFFFFF" intensity={200} />
-      <ViroARPlaneSelector>
+      {/* Lighting */}
+      <ViroAmbientLight color="#FFFFFF" intensity={300} />
+      <ViroDirectionalLight
+        color="#FFFFFF"
+        direction={[0, -1, -0.2]}
+        intensity={500}
+        castsShadow={true}
+      />
+
+      {/* AR Image Marker Detection */}
+      <ViroARImageMarker
+        target="arena"
+        onAnchorFound={handleAnchorFound}
+        onAnchorRemoved={handleAnchorRemoved}>
         <ViroNode position={[0, 0, 0]}>
-          <ViroBox
-            position={[0, 0.1, 0]}
-            scale={[0.2, 0.2, 0.2]}
+          {/* 3D Character Model */}
+          <Viro3DObject
+            source={require('../assets/models/chip_character.glb')}
+            type="GLB"
+            position={[0, 0, 0]}
+            scale={modelScale}
+            rotation={[0, 0, 0]}
+            onLoadStart={() => console.log('Loading 3D model...')}
+            onLoadEnd={() => console.log('3D model loaded!')}
+            onError={(error) => console.error('3D model error:', error)}
           />
         </ViroNode>
-      </ViroARPlaneSelector>
+      </ViroARImageMarker>
     </ViroARScene>
   );
 }
@@ -80,6 +126,9 @@ interface ARGameScreenProps {
 export default function ARGameScreen({onBack}: ARGameScreenProps) {
   const insets = useSafeAreaInsets();
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
+  const [markerDetected, setMarkerDetected] = React.useState(false);
+  const [statusText, setStatusText] = React.useState('SCANNING...');
+  const [statusSubtext, setStatusSubtext] = React.useState('LOOKING FOR BOARD');
 
   React.useEffect(() => {
     Animated.loop(
@@ -98,6 +147,25 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
     ).start();
   }, [pulseAnim]);
 
+  const handleMarkerFound = () => {
+    setMarkerDetected(true);
+    setStatusText('BOARD DETECTED');
+    setStatusSubtext('CHARACTER LOADED');
+  };
+
+  const handleMarkerLost = () => {
+    setMarkerDetected(false);
+    setStatusText('SCANNING...');
+    setStatusSubtext('LOOKING FOR BOARD');
+  };
+
+  const handleConfirmBoard = () => {
+    if (markerDetected) {
+      console.log('Board confirmed! Starting game...');
+      // TODO: Navigate to game screen or start game logic
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
@@ -107,6 +175,10 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
         autofocus={true}
         initialScene={{
           scene: ARGameScene,
+          passProps: {
+            onMarkerFound: handleMarkerFound,
+            onMarkerLost: handleMarkerLost,
+          },
         }}
         style={styles.arScene}
       />
@@ -125,10 +197,23 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
 
         <View style={styles.statusContainer}>
           <View style={styles.statusRow}>
-            <Animated.View style={[styles.statusDot, {transform: [{scale: pulseAnim}]}]} />
-            <Text style={styles.statusText}>SCANNING...</Text>
+            <Animated.View 
+              style={[
+                styles.statusDot, 
+                {
+                  transform: [{scale: pulseAnim}],
+                  backgroundColor: markerDetected ? '#4ade80' : '#22d3ee',
+                }
+              ]} 
+            />
+            <Text style={[
+              styles.statusText,
+              {color: markerDetected ? '#4ade80' : '#22d3ee'}
+            ]}>
+              {statusText}
+            </Text>
           </View>
-          <Text style={styles.statusSubtext}>PROCESSING BOARD</Text>
+          <Text style={styles.statusSubtext}>{statusSubtext}</Text>
         </View>
 
         <TouchableOpacity
@@ -158,9 +243,16 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
       {/* Confirm Button */}
       <View style={[styles.buttonContainer, {bottom: insets.bottom + 40}]}>
         <TouchableOpacity
-          style={styles.confirmButton}
-          activeOpacity={0.85}>
-          <Text style={styles.confirmButtonText}>Confirm Board</Text>
+          style={[
+            styles.confirmButton,
+            !markerDetected && styles.confirmButtonDisabled
+          ]}
+          activeOpacity={0.85}
+          onPress={handleConfirmBoard}
+          disabled={!markerDetected}>
+          <Text style={styles.confirmButtonText}>
+            {markerDetected ? 'Confirm Board' : 'Point Camera at Board'}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -330,5 +422,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontFamily: 'Outfit-Bold',
     color: '#fff',
+  },
+  confirmButtonDisabled: {
+    backgroundColor: 'rgba(36, 184, 207, 0.3)',
+    opacity: 0.5,
   },
 });
