@@ -100,11 +100,11 @@ function ARGameScene({onMarkerFound, onMarkerLost}: ARGameSceneProps) {
         target="arena"
         onAnchorFound={handleAnchorFound}
         onAnchorRemoved={handleAnchorRemoved}>
-        {/* 3D Character Model - Positioned directly on marker */}
+        {/* 3D Character Model - Floating above marker */}
         <Viro3DObject
           source={require('../assets/models/chip_character.glb')}
           type="GLB"
-          position={[0, 0, 0]}
+          position={[0, 0.1, 0]}
           scale={modelScale}
           rotation={[0, 0, 0]}
           onLoadStart={() => console.log('Loading 3D model...')}
