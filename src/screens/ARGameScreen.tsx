@@ -60,7 +60,7 @@ ViroARTrackingTargets.createTargets({
   arena: {
     source: require('../assets/images/markers/arena.png'),
     orientation: 'Up',
-    physicalWidth: 0.15, // 15cm in meters - adjust to your actual marker size
+    physicalWidth: 0.18, // 18cm in meters - optimized for better tracking
     type: 'Image',
   },
 });
@@ -112,7 +112,7 @@ function ARGameScene({onMarkerFound, onMarkerLost}: ARGameSceneProps) {
         <Viro3DObject
           source={require('../assets/models/chip_character.glb')}
           type="GLB"
-          position={[0, 0.05, 0]}
+          position={[-0.02, 0.05, 0]}
           scale={modelScale}
           rotation={[0, 0, 0]}
           onLoadStart={() => console.log('Loading 3D model...')}
