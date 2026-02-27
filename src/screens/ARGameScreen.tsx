@@ -60,25 +60,25 @@ ViroARTrackingTargets.createTargets({
   arena: {
     source: require('../assets/images/markers/arena.png'),
     orientation: 'Up',
-    physicalWidth: 0.18,
+    physicalWidth: 0.18, // 18cm - optimized for smooth tracking
     type: 'Image',
   },
   firewall: {
     source: require('../assets/images/markers/firewall.png'),
     orientation: 'Up',
-    physicalWidth: 0.18,
+    physicalWidth: 0.16, // 16cm - adjusted for firewall marker size
     type: 'Image',
   },
   portal: {
     source: require('../assets/images/markers/portal.png'),
     orientation: 'Up',
-    physicalWidth: 0.18,
+    physicalWidth: 0.17, // 17cm - adjusted for portal marker size
     type: 'Image',
   },
   startBase: {
     source: require('../assets/images/markers/start-base1.png'),
     orientation: 'Up',
-    physicalWidth: 0.18,
+    physicalWidth: 0.19, // 19cm - adjusted for start-base marker size
     type: 'Image',
   },
 });
@@ -238,7 +238,7 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
       {/* AR Camera View */}
       <ViroARSceneNavigator
         autofocus={true}
-        numberOfTrackedImages={1}
+        numberOfTrackedImages={3}
         initialScene={{
           scene: ARGameScene,
           passProps: {
