@@ -238,7 +238,7 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
       {/* AR Camera View */}
       <ViroARSceneNavigator
         autofocus={true}
-        numberOfTrackedImages={4}
+        numberOfTrackedImages={2}
         initialScene={{
           scene: ARGameScene,
           passProps: {
