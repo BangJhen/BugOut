@@ -15,7 +15,6 @@ import {
   Viro3DObject,
   ViroAmbientLight,
   ViroDirectionalLight,
-  ViroNode,
 } from '@reactvision/react-viro';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Path} from 'react-native-svg';
@@ -100,19 +99,17 @@ function ARGameScene({onMarkerFound, onMarkerLost}: ARGameSceneProps) {
         target="arena"
         onAnchorFound={handleAnchorFound}
         onAnchorRemoved={handleAnchorRemoved}>
-        <ViroNode position={[0, 0, 0]}>
-          {/* 3D Character Model */}
-          <Viro3DObject
-            source={require('../assets/models/chip_character.glb')}
-            type="GLB"
-            position={[0, 0, 0]}
-            scale={modelScale}
-            rotation={[0, 0, 0]}
-            onLoadStart={() => console.log('Loading 3D model...')}
-            onLoadEnd={() => console.log('3D model loaded!')}
-            onError={(error) => console.error('3D model error:', error)}
-          />
-        </ViroNode>
+        {/* 3D Character Model - Positioned directly on marker */}
+        <Viro3DObject
+          source={require('../assets/models/chip_character.glb')}
+          type="GLB"
+          position={[0, 0, 0]}
+          scale={modelScale}
+          rotation={[0, 0, 0]}
+          onLoadStart={() => console.log('Loading 3D model...')}
+          onLoadEnd={() => console.log('3D model loaded!')}
+          onError={(error) => console.error('3D model error:', error)}
+        />
       </ViroARImageMarker>
     </ViroARScene>
   );
