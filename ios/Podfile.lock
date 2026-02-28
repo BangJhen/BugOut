@@ -1840,6 +1840,34 @@ PODS:
   - react-native-track-player (4.1.2):
     - React-Core
     - SwiftAudioEx (= 1.1.0)
+  - react-native-worklets-core (1.6.3):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - React-NativeModulesApple (0.81.4):
     - boost
     - DoubleConversion
@@ -2707,6 +2735,18 @@ PODS:
     - React-Fabric
     - React-FabricComponents
     - React-RCTFabric
+  - VisionCamera (4.7.3):
+    - VisionCamera/Core (= 4.7.3)
+    - VisionCamera/FrameProcessors (= 4.7.3)
+    - VisionCamera/React (= 4.7.3)
+  - VisionCamera/Core (4.7.3)
+  - VisionCamera/FrameProcessors (4.7.3):
+    - React
+    - React-callinvoker
+    - react-native-worklets-core
+  - VisionCamera/React (4.7.3):
+    - React-Core
+    - VisionCamera/FrameProcessors
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -2754,6 +2794,7 @@ DEPENDENCIES:
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - react-native-track-player (from `../node_modules/react-native-track-player`)
+  - react-native-worklets-core (from `../node_modules/react-native-worklets-core`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-oscompat (from `../node_modules/react-native/ReactCommon/oscompat`)
   - React-perflogger (from `../node_modules/react-native/ReactCommon/reactperflogger`)
@@ -2793,6 +2834,7 @@ DEPENDENCIES:
   - SocketRocket (~> 0.7.1)
   - "ViroKit (from `../node_modules/@reactvision/react-viro/ios/dist/ViroRenderer/`)"
   - "ViroReact (from `../node_modules/@reactvision/react-viro/ios/`)"
+  - VisionCamera (from `../node_modules/react-native-vision-camera`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -2888,6 +2930,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-track-player:
     :path: "../node_modules/react-native-track-player"
+  react-native-worklets-core:
+    :path: "../node_modules/react-native-worklets-core"
   React-NativeModulesApple:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios"
   React-oscompat:
@@ -2964,6 +3008,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@reactvision/react-viro/ios/dist/ViroRenderer/"
   ViroReact:
     :path: "../node_modules/@reactvision/react-viro/ios/"
+  VisionCamera:
+    :path: "../node_modules/react-native-vision-camera"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -3011,6 +3057,7 @@ SPEC CHECKSUMS:
   React-microtasksnativemodule: 75b6604b667d297292345302cc5bfb6b6aeccc1b
   react-native-safe-area-context: c00143b4823773bba23f2f19f85663ae89ceb460
   react-native-track-player: dd56f9948e03756a217c75e0a61aa04aab65b5a1
+  react-native-worklets-core: aaaac7d17f7e576592369a54f30e96fe4875c983
   React-NativeModulesApple: 879fbdc5dcff7136abceb7880fe8a2022a1bd7c3
   React-oscompat: 93b5535ea7f7dff46aaee4f78309a70979bdde9d
   React-perflogger: 5536d2df3d18fe0920263466f7b46a56351c0510
@@ -3051,6 +3098,7 @@ SPEC CHECKSUMS:
   SwiftAudioEx: f6aa653770f3a0d3851edaf8d834a30aee4a7646
   ViroKit: c9c10b089da06a10bb357079729cd7181161b3f8
   ViroReact: 65fcff3c9615a9355f61add61613d3bfafd6d2df
+  VisionCamera: 0044a94f7489f19e19d5938e97dfc36f4784af3c
   Yoga: a3ed390a19db0459bd6839823a6ac6d9c6db198d
 
 PODFILE CHECKSUM: 69c56ff63fcad59c6e34e11948bb2d476d386603
