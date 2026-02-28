@@ -87,26 +87,38 @@ ViroARTrackingTargets.createTargets({
 interface ARGameSceneProps {
   onMarkerFound: (markerName: string) => void;
   onMarkerLost: () => void;
-  activeMarker: string | null;
 }
 
-function ARGameScene({onMarkerFound, onMarkerLost, activeMarker}: ARGameSceneProps) {
+function ARGameScene({onMarkerFound, onMarkerLost}: ARGameSceneProps) {
   const modelScale: [number, number, number] = [0.15, 0.15, 0.15];
+  const [activeMarker, setActiveMarker] = React.useState<string | null>(null);
 
   const createAnchorFoundHandler = (markerName: string) => (anchor: any) => {
     console.log(`${markerName} marker found!`);
     console.log('Anchor position:', anchor.position);
     console.log('Anchor rotation:', anchor.rotation);
-    onMarkerFound(markerName);
+    
+    // Only set active marker if no marker is currently active
+    if (!activeMarker) {
+      setActiveMarker(markerName);
+      console.log(`Active marker set to: ${markerName}`);
+      onMarkerFound(markerName);
+    } else {
+      console.log(`Marker ${markerName} detected but ${activeMarker} is already active`);
+    }
   };
 
   const handleAnchorUpdated = (anchor: any) => {
     console.log('Anchor updated - Position:', anchor.position);
   };
 
-  const handleAnchorRemoved = () => {
-    console.log('Marker lost!');
-    onMarkerLost();
+  const createAnchorRemovedHandler = (markerName: string) => () => {
+    console.log(`${markerName} marker lost!`);
+    // Only reset if this was the active marker
+    if (activeMarker === markerName) {
+      setActiveMarker(null);
+      onMarkerLost();
+    }
   };
 
   return (
@@ -125,7 +137,7 @@ function ARGameScene({onMarkerFound, onMarkerLost, activeMarker}: ARGameScenePro
         target="arena"
         onAnchorFound={createAnchorFoundHandler('arena')}
         onAnchorUpdated={handleAnchorUpdated}
-        onAnchorRemoved={handleAnchorRemoved}>
+        onAnchorRemoved={createAnchorRemovedHandler('arena')}>
         {activeMarker === 'arena' && (
           <Viro3DObject
             source={require('../assets/models/chip_character.glb')}
@@ -142,7 +154,7 @@ function ARGameScene({onMarkerFound, onMarkerLost, activeMarker}: ARGameScenePro
         target="firewall"
         onAnchorFound={createAnchorFoundHandler('firewall')}
         onAnchorUpdated={handleAnchorUpdated}
-        onAnchorRemoved={handleAnchorRemoved}>
+        onAnchorRemoved={createAnchorRemovedHandler('firewall')}>
         {activeMarker === 'firewall' && (
           <Viro3DObject
             source={require('../assets/models/chip_character.glb')}
@@ -159,7 +171,7 @@ function ARGameScene({onMarkerFound, onMarkerLost, activeMarker}: ARGameScenePro
         target="portal"
         onAnchorFound={createAnchorFoundHandler('portal')}
         onAnchorUpdated={handleAnchorUpdated}
-        onAnchorRemoved={handleAnchorRemoved}>
+        onAnchorRemoved={createAnchorRemovedHandler('portal')}>
         {activeMarker === 'portal' && (
           <Viro3DObject
             source={require('../assets/models/chip_character.glb')}
@@ -176,7 +188,7 @@ function ARGameScene({onMarkerFound, onMarkerLost, activeMarker}: ARGameScenePro
         target="startBase"
         onAnchorFound={createAnchorFoundHandler('startBase')}
         onAnchorUpdated={handleAnchorUpdated}
-        onAnchorRemoved={handleAnchorRemoved}>
+        onAnchorRemoved={createAnchorRemovedHandler('startBase')}>
         {activeMarker === 'startBase' && (
           <Viro3DObject
             source={require('../assets/models/chip_character.glb')}
@@ -200,7 +212,6 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
   const insets = useSafeAreaInsets();
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
   const [markerDetected, setMarkerDetected] = React.useState(false);
-  const [activeMarker, setActiveMarker] = React.useState<string | null>(null);
   const [statusText, setStatusText] = React.useState('SCANNING...');
   const [statusSubtext, setStatusSubtext] = React.useState('LOOKING FOR BOARD');
 
@@ -222,18 +233,13 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
   }, [pulseAnim]);
 
   const handleMarkerFound = (markerName: string) => {
-    // Only set active marker if no marker is currently active
-    if (!activeMarker) {
-      setActiveMarker(markerName);
-      setMarkerDetected(true);
-      setStatusText('BOARD DETECTED');
-      setStatusSubtext('CHARACTER LOADED');
-      console.log(`Active marker set to: ${markerName}`);
-    }
+    setMarkerDetected(true);
+    setStatusText('BOARD DETECTED');
+    setStatusSubtext('CHARACTER LOADED');
+    console.log(`UI updated for marker: ${markerName}`);
   };
 
   const handleMarkerLost = () => {
-    setActiveMarker(null);
     setMarkerDetected(false);
     setStatusText('SCANNING...');
     setStatusSubtext('LOOKING FOR BOARD');
@@ -259,7 +265,6 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
           passProps: {
             onMarkerFound: handleMarkerFound,
             onMarkerLost: handleMarkerLost,
-            activeMarker: activeMarker,
           },
         }}
         style={styles.arScene}
