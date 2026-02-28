@@ -6,34 +6,46 @@ import {
   TouchableOpacity,
   StatusBar,
   Animated,
-  Dimensions,
 } from 'react-native';
-import {
-  Camera,
-  useCameraDevice,
-  useCameraPermission,
-  useFrameProcessor,
-} from 'react-native-vision-camera';
 import {
   ViroARSceneNavigator,
   ViroARScene,
   Viro3DObject,
   ViroAmbientLight,
   ViroDirectionalLight,
-  ViroNode,
+  ViroARImageMarker,
+  ViroARTrackingTargets,
 } from '@reactvision/react-viro';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Path} from 'react-native-svg';
-import {runOnJS} from 'react-native-reanimated';
-import {MarkerTracker, TrackedMarker} from '../utils/markerTracking';
-import {MarkerDetectionResult} from '../utils/markerDetectionMLKit';
-import {screenToWorldCoordinates} from '../utils/markerDetection';
 
-const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
-
-// Marker detection configuration
-const DETECTION_INTERVAL = 3; // Process every 3rd frame for performance
-let frameCount = 0;
+// Define AR tracking targets for markers
+ViroARTrackingTargets.createTargets({
+  arena: {
+    source: require('../assets/images/markers/arena.png'),
+    orientation: 'Up',
+    physicalWidth: 0.15, // 15cm
+    type: 'Image',
+  },
+  firewall: {
+    source: require('../assets/images/markers/firewall.png'),
+    orientation: 'Up',
+    physicalWidth: 0.15,
+    type: 'Image',
+  },
+  portal: {
+    source: require('../assets/images/markers/portal.png'),
+    orientation: 'Up',
+    physicalWidth: 0.15,
+    type: 'Image',
+  },
+  startBase: {
+    source: require('../assets/images/markers/start-base1.png'),
+    orientation: 'Up',
+    physicalWidth: 0.15,
+    type: 'Image',
+  },
+});
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 function CloseIcon({size = 24}: {size?: number}) {
@@ -52,11 +64,33 @@ function CloseIcon({size = 24}: {size?: number}) {
 
 // ─── AR Scene Component ───────────────────────────────────────────────────────
 interface ARSceneProps {
-  trackedMarkers: TrackedMarker[];
+  onMarkerFound: () => void;
+  onMarkerLost: () => void;
 }
 
-function ARScene({trackedMarkers}: ARSceneProps) {
+function ARScene({onMarkerFound, onMarkerLost}: ARSceneProps) {
+  const [visibleMarkers, setVisibleMarkers] = React.useState<Set<string>>(new Set());
   const modelScale: [number, number, number] = [0.15, 0.15, 0.15];
+
+  const createAnchorFoundHandler = (markerName: string) => () => {
+    console.log(`${markerName} marker found!`);
+    setVisibleMarkers(prev => {
+      const newSet = new Set(prev);
+      newSet.add(markerName);
+      return newSet;
+    });
+    onMarkerFound();
+  };
+
+  const createAnchorRemovedHandler = (markerName: string) => () => {
+    console.log(`${markerName} marker lost!`);
+    setVisibleMarkers(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(markerName);
+      return newSet;
+    });
+    onMarkerLost();
+  };
 
   return (
     <ViroARScene>
@@ -69,20 +103,69 @@ function ARScene({trackedMarkers}: ARSceneProps) {
         castsShadow={true}
       />
 
-      {/* Render 3D characters for tracked markers */}
-      {trackedMarkers.map(marker => (
-        <ViroNode
-          key={marker.markerName}
-          position={[marker.position.x, marker.position.y, marker.position.z]}>
+      {/* Arena Marker */}
+      <ViroARImageMarker
+        target="arena"
+        onAnchorFound={createAnchorFoundHandler('arena')}
+        onAnchorRemoved={createAnchorRemovedHandler('arena')}>
+        {visibleMarkers.has('arena') && (
           <Viro3DObject
             source={require('../assets/models/chip_character.glb')}
             type="GLB"
-            position={[0, 0.05, 0]}
+            position={[-0.01, 0.05, 0]}
             scale={modelScale}
             rotation={[0, 0, 0]}
           />
-        </ViroNode>
-      ))}
+        )}
+      </ViroARImageMarker>
+
+      {/* Firewall Marker */}
+      <ViroARImageMarker
+        target="firewall"
+        onAnchorFound={createAnchorFoundHandler('firewall')}
+        onAnchorRemoved={createAnchorRemovedHandler('firewall')}>
+        {visibleMarkers.has('firewall') && (
+          <Viro3DObject
+            source={require('../assets/models/chip_character.glb')}
+            type="GLB"
+            position={[-0.01, 0.05, 0]}
+            scale={modelScale}
+            rotation={[0, 0, 0]}
+          />
+        )}
+      </ViroARImageMarker>
+
+      {/* Portal Marker */}
+      <ViroARImageMarker
+        target="portal"
+        onAnchorFound={createAnchorFoundHandler('portal')}
+        onAnchorRemoved={createAnchorRemovedHandler('portal')}>
+        {visibleMarkers.has('portal') && (
+          <Viro3DObject
+            source={require('../assets/models/chip_character.glb')}
+            type="GLB"
+            position={[-0.01, 0.05, 0]}
+            scale={modelScale}
+            rotation={[0, 0, 0]}
+          />
+        )}
+      </ViroARImageMarker>
+
+      {/* Start Base Marker */}
+      <ViroARImageMarker
+        target="startBase"
+        onAnchorFound={createAnchorFoundHandler('startBase')}
+        onAnchorRemoved={createAnchorRemovedHandler('startBase')}>
+        {visibleMarkers.has('startBase') && (
+          <Viro3DObject
+            source={require('../assets/models/chip_character.glb')}
+            type="GLB"
+            position={[-0.01, 0.05, 0]}
+            scale={modelScale}
+            rotation={[0, 0, 0]}
+          />
+        )}
+      </ViroARImageMarker>
     </ViroARScene>
   );
 }
@@ -96,25 +179,11 @@ export default function ARGameScreenHybrid({onBack}: ARGameScreenHybridProps) {
   const insets = useSafeAreaInsets();
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
   
-  // Camera setup
-  const device = useCameraDevice('back');
-  const {hasPermission, requestPermission} = useCameraPermission();
-  
   // State
   const [markerDetected, setMarkerDetected] = React.useState(false);
   const [statusText, setStatusText] = React.useState('SCANNING...');
   const [statusSubtext, setStatusSubtext] = React.useState('LOOKING FOR BOARD');
-  const [trackedMarkers, setTrackedMarkers] = React.useState<TrackedMarker[]>([]);
-  
-  // Marker tracker instance
-  const markerTracker = React.useRef(new MarkerTracker()).current;
-
-  // Request camera permission on mount
-  React.useEffect(() => {
-    if (!hasPermission) {
-      requestPermission();
-    }
-  }, [hasPermission, requestPermission]);
+  const [markerCount, setMarkerCount] = React.useState(0);
 
   // Pulse animation
   React.useEffect(() => {
@@ -134,107 +203,35 @@ export default function ARGameScreenHybrid({onBack}: ARGameScreenHybridProps) {
     ).start();
   }, [pulseAnim]);
 
-  // Process detected markers and update tracking
-  const processDetections = React.useCallback((detections: MarkerDetectionResult[]) => {
-    const updatedMarkers: TrackedMarker[] = [];
-    
-    // Update each detected marker with Kalman filter
-    detections.forEach(detection => {
-      // Convert screen coordinates to AR world coordinates
-      const worldPos = screenToWorldCoordinates(
-        detection.center.x,
-        detection.center.y,
-        SCREEN_WIDTH,
-        SCREEN_HEIGHT
-      );
-      
-      // Update marker with Kalman filter for smooth tracking
-      const tracked = markerTracker.updateMarker(
-        detection.markerName,
-        worldPos,
-        detection.confidence
-      );
-      
-      updatedMarkers.push(tracked);
-    });
-    
-    // Remove markers that are no longer detected
-    const detectedNames = new Set(detections.map(d => d.markerName));
-    markerTracker.getTrackedMarkers().forEach(marker => {
-      if (!detectedNames.has(marker.markerName as any)) {
-        markerTracker.removeMarker(marker.markerName);
-      }
-    });
-    
-    // Update UI
-    setTrackedMarkers(updatedMarkers);
-    if (updatedMarkers.length > 0) {
-      setMarkerDetected(true);
-      setStatusText('BOARD DETECTED');
-      setStatusSubtext(`${updatedMarkers.length} MARKER${updatedMarkers.length > 1 ? 'S' : ''} TRACKED`);
-    } else {
-      setMarkerDetected(false);
-      setStatusText('SCANNING...');
-      setStatusSubtext('LOOKING FOR BOARD');
-    }
-  }, [markerTracker]);
+  const handleMarkerFound = React.useCallback(() => {
+    setMarkerCount(prev => prev + 1);
+    setMarkerDetected(true);
+    setStatusText('BOARD DETECTED');
+    setStatusSubtext('CHARACTER LOADED');
+  }, []);
 
-  // Frame processor for marker detection
-  const frameProcessor = useFrameProcessor((frame) => {
-    'worklet';
-    
-    // Process every Nth frame for performance
-    frameCount++;
-    if (frameCount % DETECTION_INTERVAL !== 0) {
-      return;
-    }
-    
-    // Simulate marker detection for now
-    // In production, this would analyze the frame buffer
-    // and detect actual marker patterns
-    
-    // For testing: Simulate random marker detection
-    const simulatedDetections: MarkerDetectionResult[] = [];
-    
-    // Randomly detect markers for testing (remove in production)
-    if (Math.random() > 0.7) {
-      const markerNames: Array<'arena' | 'firewall' | 'portal' | 'startBase'> = 
-        ['arena', 'firewall', 'portal', 'startBase'];
-      const randomMarker = markerNames[Math.floor(Math.random() * markerNames.length)];
-      
-      simulatedDetections.push({
-        markerName: randomMarker,
-        bounds: {
-          x: SCREEN_WIDTH * 0.3,
-          y: SCREEN_HEIGHT * 0.4,
-          width: 100,
-          height: 100,
-        },
-        confidence: 0.85,
-        center: {
-          x: SCREEN_WIDTH * 0.5,
-          y: SCREEN_HEIGHT * 0.5,
-        },
+  const handleMarkerLost = React.useCallback(() => {
+    setMarkerCount(prev => Math.max(0, prev - 1));
+    // Only update status if no markers left
+    setTimeout(() => {
+      setMarkerCount(current => {
+        if (current === 0) {
+          setMarkerDetected(false);
+          setStatusText('SCANNING...');
+          setStatusSubtext('LOOKING FOR BOARD');
+        }
+        return current;
       });
-    }
-    
-    // Process detections on JS thread
-    if (simulatedDetections.length > 0) {
-      runOnJS(processDetections)(simulatedDetections);
-    }
-    
-    // TODO: Replace simulation with actual detection:
-    // const detections = detectMarkersInFrame(frame, frame.width, frame.height);
-    // runOnJS(processDetections)(detections);
-  }, [processDetections]);
+    }, 100);
+  }, []);
 
   const handleReset = () => {
     console.log('Reset button pressed');
-    markerTracker.reset();
-    setTrackedMarkers([]);
+    setMarkerCount(0);
     setMarkerDetected(false);
     setStatusText('SCANNING...');
     setStatusSubtext('LOOKING FOR BOARD');
+    // ViroReact will handle marker reset automatically
   };
 
   const handleConfirmBoard = () => {
@@ -244,52 +241,23 @@ export default function ARGameScreenHybrid({onBack}: ARGameScreenHybridProps) {
     }
   };
 
-  // Show loading if no camera device
-  if (device == null) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Loading camera...</Text>
-      </View>
-    );
-  }
-
-  // Show permission request if needed
-  if (!hasPermission) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Camera permission required</Text>
-        <TouchableOpacity onPress={requestPermission} style={styles.permissionButton}>
-          <Text style={styles.permissionButtonText}>Grant Permission</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* Vision Camera for marker detection */}
-      <Camera
+      {/* ViroReact AR Scene with native marker tracking */}
+      <ViroARSceneNavigator
+        autofocus={true}
+        numberOfTrackedImages={3}
+        initialScene={{
+          scene: ARScene,
+          passProps: {
+            onMarkerFound: handleMarkerFound,
+            onMarkerLost: handleMarkerLost,
+          },
+        }}
         style={StyleSheet.absoluteFill}
-        device={device}
-        isActive={true}
-        frameProcessor={frameProcessor}
       />
-
-      {/* ViroReact AR overlay for 3D rendering */}
-      <View style={styles.arOverlay} pointerEvents="none">
-        <ViroARSceneNavigator
-          autofocus={true}
-          initialScene={{
-            scene: ARScene,
-            passProps: {
-              trackedMarkers: trackedMarkers,
-            },
-          }}
-          style={styles.arScene}
-        />
-      </View>
 
       {/* Dark Overlay */}
       <View style={styles.overlay} />
@@ -381,10 +349,10 @@ export default function ARGameScreenHybrid({onBack}: ARGameScreenHybridProps) {
       {/* Debug Info */}
       <View style={styles.debugInfo}>
         <Text style={styles.debugText}>
-          Tracked Markers: {trackedMarkers.length}
+          Active Markers: {markerCount}
         </Text>
         <Text style={styles.debugText}>
-          Mode: Vision Camera + ViroReact Hybrid
+          Mode: ViroReact Native Tracking
         </Text>
       </View>
     </View>
