@@ -41,25 +41,25 @@ ViroARTrackingTargets.createTargets({
   arena: {
     source: require('../assets/images/markers/arena.png'),
     orientation: 'Up',
-    physicalWidth: 0.18, // 18cm - optimized for smooth tracking
+    physicalWidth: 0.15, // 15cm - standardized for optimal detection
     type: 'Image',
   },
   firewall: {
     source: require('../assets/images/markers/firewall.png'),
     orientation: 'Up',
-    physicalWidth: 0.16, // 16cm - adjusted for firewall marker size
+    physicalWidth: 0.15, // 15cm - standardized for optimal detection
     type: 'Image',
   },
   portal: {
     source: require('../assets/images/markers/portal.png'),
     orientation: 'Up',
-    physicalWidth: 0.17, // 17cm - adjusted for portal marker size
+    physicalWidth: 0.15, // 15cm - standardized for optimal detection
     type: 'Image',
   },
   startBase: {
     source: require('../assets/images/markers/start-base1.png'),
     orientation: 'Up',
-    physicalWidth: 0.19, // 19cm - adjusted for start-base marker size
+    physicalWidth: 0.15, // 15cm - standardized for optimal detection
     type: 'Image',
   },
 });
@@ -90,10 +90,8 @@ function ARGameScene({onMarkerFound, onMarkerLost, onReset}: ARGameSceneProps) {
     };
   }, [onReset]);
 
-  const createAnchorFoundHandler = (markerName: string) => (anchor: any) => {
+  const createAnchorFoundHandler = (markerName: string) => (_anchor: any) => {
     console.log(`${markerName} marker found!`);
-    console.log('Anchor position:', anchor.position);
-    console.log('Anchor rotation:', anchor.rotation);
     
     setVisibleMarkers(prev => {
       const newSet = new Set(prev);
@@ -101,10 +99,6 @@ function ARGameScene({onMarkerFound, onMarkerLost, onReset}: ARGameSceneProps) {
       return newSet;
     });
     onMarkerFound();
-  };
-
-  const handleAnchorUpdated = (anchor: any) => {
-    console.log('Anchor updated - Position:', anchor.position);
   };
 
   const createAnchorRemovedHandler = (markerName: string) => () => {
@@ -132,7 +126,6 @@ function ARGameScene({onMarkerFound, onMarkerLost, onReset}: ARGameSceneProps) {
       <ViroARImageMarker
         target="arena"
         onAnchorFound={createAnchorFoundHandler('arena')}
-        onAnchorUpdated={handleAnchorUpdated}
         onAnchorRemoved={createAnchorRemovedHandler('arena')}>
         {visibleMarkers.has('arena') && (
           <Viro3DObject
@@ -149,7 +142,6 @@ function ARGameScene({onMarkerFound, onMarkerLost, onReset}: ARGameSceneProps) {
       <ViroARImageMarker
         target="firewall"
         onAnchorFound={createAnchorFoundHandler('firewall')}
-        onAnchorUpdated={handleAnchorUpdated}
         onAnchorRemoved={createAnchorRemovedHandler('firewall')}>
         {visibleMarkers.has('firewall') && (
           <Viro3DObject
@@ -166,7 +158,6 @@ function ARGameScene({onMarkerFound, onMarkerLost, onReset}: ARGameSceneProps) {
       <ViroARImageMarker
         target="portal"
         onAnchorFound={createAnchorFoundHandler('portal')}
-        onAnchorUpdated={handleAnchorUpdated}
         onAnchorRemoved={createAnchorRemovedHandler('portal')}>
         {visibleMarkers.has('portal') && (
           <Viro3DObject
@@ -183,7 +174,6 @@ function ARGameScene({onMarkerFound, onMarkerLost, onReset}: ARGameSceneProps) {
       <ViroARImageMarker
         target="startBase"
         onAnchorFound={createAnchorFoundHandler('startBase')}
-        onAnchorUpdated={handleAnchorUpdated}
         onAnchorRemoved={createAnchorRemovedHandler('startBase')}>
         {visibleMarkers.has('startBase') && (
           <Viro3DObject
