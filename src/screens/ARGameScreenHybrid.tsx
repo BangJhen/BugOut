@@ -26,8 +26,14 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Path} from 'react-native-svg';
 import {runOnJS} from 'react-native-reanimated';
 import {MarkerTracker, TrackedMarker} from '../utils/markerTracking';
+import {MarkerDetectionResult} from '../utils/markerDetectionMLKit';
+import {screenToWorldCoordinates} from '../utils/markerDetection';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
+
+// Marker detection configuration
+const DETECTION_INTERVAL = 3; // Process every 3rd frame for performance
+let frameCount = 0;
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 function CloseIcon({size = 24}: {size?: number}) {
@@ -128,37 +134,99 @@ export default function ARGameScreenHybrid({onBack}: ARGameScreenHybridProps) {
     ).start();
   }, [pulseAnim]);
 
-  // Update UI when markers detected
-  const handleMarkersDetected = React.useCallback((markers: TrackedMarker[]) => {
-    setTrackedMarkers(markers);
-    if (markers.length > 0) {
+  // Process detected markers and update tracking
+  const processDetections = React.useCallback((detections: MarkerDetectionResult[]) => {
+    const updatedMarkers: TrackedMarker[] = [];
+    
+    // Update each detected marker with Kalman filter
+    detections.forEach(detection => {
+      // Convert screen coordinates to AR world coordinates
+      const worldPos = screenToWorldCoordinates(
+        detection.center.x,
+        detection.center.y,
+        SCREEN_WIDTH,
+        SCREEN_HEIGHT
+      );
+      
+      // Update marker with Kalman filter for smooth tracking
+      const tracked = markerTracker.updateMarker(
+        detection.markerName,
+        worldPos,
+        detection.confidence
+      );
+      
+      updatedMarkers.push(tracked);
+    });
+    
+    // Remove markers that are no longer detected
+    const detectedNames = new Set(detections.map(d => d.markerName));
+    markerTracker.getTrackedMarkers().forEach(marker => {
+      if (!detectedNames.has(marker.markerName as any)) {
+        markerTracker.removeMarker(marker.markerName);
+      }
+    });
+    
+    // Update UI
+    setTrackedMarkers(updatedMarkers);
+    if (updatedMarkers.length > 0) {
       setMarkerDetected(true);
       setStatusText('BOARD DETECTED');
-      setStatusSubtext('CHARACTER LOADED');
+      setStatusSubtext(`${updatedMarkers.length} MARKER${updatedMarkers.length > 1 ? 'S' : ''} TRACKED`);
     } else {
       setMarkerDetected(false);
       setStatusText('SCANNING...');
       setStatusSubtext('LOOKING FOR BOARD');
     }
-  }, []);
+  }, [markerTracker]);
 
   // Frame processor for marker detection
   const frameProcessor = useFrameProcessor((frame) => {
     'worklet';
     
-    // TODO: Implement actual marker detection here
-    // For now, simulate detection based on frame analysis
-    // This will be replaced with OpenCV/ML Kit integration
+    // Process every Nth frame for performance
+    frameCount++;
+    if (frameCount % DETECTION_INTERVAL !== 0) {
+      return;
+    }
     
-    // Placeholder: Detect markers in frame
-    // const detections = detectMarkersInFrame(frame);
+    // Simulate marker detection for now
+    // In production, this would analyze the frame buffer
+    // and detect actual marker patterns
     
-    // For demo purposes, simulate marker detection
-    // In production, this would use actual CV algorithms
+    // For testing: Simulate random marker detection
+    const simulatedDetections: MarkerDetectionResult[] = [];
     
-    // Update tracked markers on JS thread
-    // runOnJS(handleMarkersDetected)(processedMarkers);
-  }, []);
+    // Randomly detect markers for testing (remove in production)
+    if (Math.random() > 0.7) {
+      const markerNames: Array<'arena' | 'firewall' | 'portal' | 'startBase'> = 
+        ['arena', 'firewall', 'portal', 'startBase'];
+      const randomMarker = markerNames[Math.floor(Math.random() * markerNames.length)];
+      
+      simulatedDetections.push({
+        markerName: randomMarker,
+        bounds: {
+          x: SCREEN_WIDTH * 0.3,
+          y: SCREEN_HEIGHT * 0.4,
+          width: 100,
+          height: 100,
+        },
+        confidence: 0.85,
+        center: {
+          x: SCREEN_WIDTH * 0.5,
+          y: SCREEN_HEIGHT * 0.5,
+        },
+      });
+    }
+    
+    // Process detections on JS thread
+    if (simulatedDetections.length > 0) {
+      runOnJS(processDetections)(simulatedDetections);
+    }
+    
+    // TODO: Replace simulation with actual detection:
+    // const detections = detectMarkersInFrame(frame, frame.width, frame.height);
+    // runOnJS(processDetections)(detections);
+  }, [processDetections]);
 
   const handleReset = () => {
     console.log('Reset button pressed');
