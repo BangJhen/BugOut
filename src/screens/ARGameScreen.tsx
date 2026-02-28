@@ -210,7 +210,6 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
   const [markerDetected, setMarkerDetected] = React.useState(false);
   const [statusText, setStatusText] = React.useState('SCANNING...');
   const [statusSubtext, setStatusSubtext] = React.useState('LOOKING FOR BOARD');
-  const [resetKey, setResetKey] = React.useState(0);
 
   React.useEffect(() => {
     Animated.loop(
@@ -246,12 +245,10 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
     setMarkerDetected(false);
     setStatusText('SCANNING...');
     setStatusSubtext('LOOKING FOR BOARD');
-    // Trigger reset in AR scene
+    // Trigger reset in AR scene (clears visibleMarkers only)
     if ((globalThis as any).resetARMarkers) {
       (globalThis as any).resetARMarkers();
     }
-    // Force re-render of AR scene
-    setResetKey(prev => prev + 1);
   };
 
   const handleConfirmBoard = () => {
@@ -267,7 +264,6 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
 
       {/* AR Camera View */}
       <ViroARSceneNavigator
-        key={resetKey}
         autofocus={true}
         numberOfTrackedImages={3}
         initialScene={{
