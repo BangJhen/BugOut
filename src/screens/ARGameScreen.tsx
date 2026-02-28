@@ -85,19 +85,19 @@ ViroARTrackingTargets.createTargets({
 
 // ─── AR Scene Component ───────────────────────────────────────────────────────
 interface ARGameSceneProps {
-  onMarkerFound: () => void;
+  onMarkerFound: (markerName: string) => void;
   onMarkerLost: () => void;
+  activeMarker: string | null;
 }
 
-function ARGameScene({onMarkerFound, onMarkerLost}: ARGameSceneProps) {
+function ARGameScene({onMarkerFound, onMarkerLost, activeMarker}: ARGameSceneProps) {
   const modelScale: [number, number, number] = [0.15, 0.15, 0.15];
 
-  const handleAnchorFound = (anchor: any) => {
-    console.log('Arena marker found!');
+  const createAnchorFoundHandler = (markerName: string) => (anchor: any) => {
+    console.log(`${markerName} marker found!`);
     console.log('Anchor position:', anchor.position);
     console.log('Anchor rotation:', anchor.rotation);
-    console.log('Anchor type:', anchor.type);
-    onMarkerFound();
+    onMarkerFound(markerName);
   };
 
   const handleAnchorUpdated = (anchor: any) => {
@@ -105,7 +105,7 @@ function ARGameScene({onMarkerFound, onMarkerLost}: ARGameSceneProps) {
   };
 
   const handleAnchorRemoved = () => {
-    console.log('Arena marker lost!');
+    console.log('Marker lost!');
     onMarkerLost();
   };
 
@@ -123,61 +123,69 @@ function ARGameScene({onMarkerFound, onMarkerLost}: ARGameSceneProps) {
       {/* AR Image Marker Detection - Arena */}
       <ViroARImageMarker
         target="arena"
-        onAnchorFound={handleAnchorFound}
+        onAnchorFound={createAnchorFoundHandler('arena')}
         onAnchorUpdated={handleAnchorUpdated}
         onAnchorRemoved={handleAnchorRemoved}>
-        <Viro3DObject
-          source={require('../assets/models/chip_character.glb')}
-          type="GLB"
-          position={[-0.02, 0.05, 0]}
-          scale={modelScale}
-          rotation={[0, 0, 0]}
-        />
+        {activeMarker === 'arena' && (
+          <Viro3DObject
+            source={require('../assets/models/chip_character.glb')}
+            type="GLB"
+            position={[-0.01, 0.05, 0]}
+            scale={modelScale}
+            rotation={[0, 0, 0]}
+          />
+        )}
       </ViroARImageMarker>
 
       {/* AR Image Marker Detection - Firewall */}
       <ViroARImageMarker
         target="firewall"
-        onAnchorFound={handleAnchorFound}
+        onAnchorFound={createAnchorFoundHandler('firewall')}
         onAnchorUpdated={handleAnchorUpdated}
         onAnchorRemoved={handleAnchorRemoved}>
-        <Viro3DObject
-          source={require('../assets/models/chip_character.glb')}
-          type="GLB"
-          position={[-0.02, 0.05, 0]}
-          scale={modelScale}
-          rotation={[0, 0, 0]}
-        />
+        {activeMarker === 'firewall' && (
+          <Viro3DObject
+            source={require('../assets/models/chip_character.glb')}
+            type="GLB"
+            position={[-0.01, 0.05, 0]}
+            scale={modelScale}
+            rotation={[0, 0, 0]}
+          />
+        )}
       </ViroARImageMarker>
 
       {/* AR Image Marker Detection - Portal */}
       <ViroARImageMarker
         target="portal"
-        onAnchorFound={handleAnchorFound}
+        onAnchorFound={createAnchorFoundHandler('portal')}
         onAnchorUpdated={handleAnchorUpdated}
         onAnchorRemoved={handleAnchorRemoved}>
-        <Viro3DObject
-          source={require('../assets/models/chip_character.glb')}
-          type="GLB"
-          position={[-0.02, 0.05, 0]}
-          scale={modelScale}
-          rotation={[0, 0, 0]}
-        />
+        {activeMarker === 'portal' && (
+          <Viro3DObject
+            source={require('../assets/models/chip_character.glb')}
+            type="GLB"
+            position={[-0.01, 0.05, 0]}
+            scale={modelScale}
+            rotation={[0, 0, 0]}
+          />
+        )}
       </ViroARImageMarker>
 
       {/* AR Image Marker Detection - Start Base */}
       <ViroARImageMarker
         target="startBase"
-        onAnchorFound={handleAnchorFound}
+        onAnchorFound={createAnchorFoundHandler('startBase')}
         onAnchorUpdated={handleAnchorUpdated}
         onAnchorRemoved={handleAnchorRemoved}>
-        <Viro3DObject
-          source={require('../assets/models/chip_character.glb')}
-          type="GLB"
-          position={[-0.02, 0.05, 0]}
-          scale={modelScale}
-          rotation={[0, 0, 0]}
-        />
+        {activeMarker === 'startBase' && (
+          <Viro3DObject
+            source={require('../assets/models/chip_character.glb')}
+            type="GLB"
+            position={[-0.01, 0.05, 0]}
+            scale={modelScale}
+            rotation={[0, 0, 0]}
+          />
+        )}
       </ViroARImageMarker>
     </ViroARScene>
   );
@@ -192,6 +200,7 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
   const insets = useSafeAreaInsets();
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
   const [markerDetected, setMarkerDetected] = React.useState(false);
+  const [activeMarker, setActiveMarker] = React.useState<string | null>(null);
   const [statusText, setStatusText] = React.useState('SCANNING...');
   const [statusSubtext, setStatusSubtext] = React.useState('LOOKING FOR BOARD');
 
@@ -212,13 +221,19 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
     ).start();
   }, [pulseAnim]);
 
-  const handleMarkerFound = () => {
-    setMarkerDetected(true);
-    setStatusText('BOARD DETECTED');
-    setStatusSubtext('CHARACTER LOADED');
+  const handleMarkerFound = (markerName: string) => {
+    // Only set active marker if no marker is currently active
+    if (!activeMarker) {
+      setActiveMarker(markerName);
+      setMarkerDetected(true);
+      setStatusText('BOARD DETECTED');
+      setStatusSubtext('CHARACTER LOADED');
+      console.log(`Active marker set to: ${markerName}`);
+    }
   };
 
   const handleMarkerLost = () => {
+    setActiveMarker(null);
     setMarkerDetected(false);
     setStatusText('SCANNING...');
     setStatusSubtext('LOOKING FOR BOARD');
@@ -244,6 +259,7 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
           passProps: {
             onMarkerFound: handleMarkerFound,
             onMarkerLost: handleMarkerLost,
+            activeMarker: activeMarker,
           },
         }}
         style={styles.arScene}
