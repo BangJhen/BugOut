@@ -7,6 +7,7 @@ import {
   StatusBar,
   Animated,
 } from 'react-native';
+
 import {
   ViroARSceneNavigator,
   ViroARScene,
@@ -34,26 +35,6 @@ function CloseIcon({size = 24}: {size?: number}) {
   );
 }
 
-function CameraIcon({size = 24}: {size?: number}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
-        stroke="#fff"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
-        stroke="#fff"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
-  );
-}
 
 // Register AR Image Targets
 ViroARTrackingTargets.createTargets({
@@ -87,11 +68,27 @@ ViroARTrackingTargets.createTargets({
 interface ARGameSceneProps {
   onMarkerFound: () => void;
   onMarkerLost: () => void;
+  onReset: () => void;
 }
 
-function ARGameScene({onMarkerFound, onMarkerLost}: ARGameSceneProps) {
+function ARGameScene({onMarkerFound, onMarkerLost, onReset}: ARGameSceneProps) {
   const modelScale: [number, number, number] = [0.15, 0.15, 0.15];
   const [visibleMarkers, setVisibleMarkers] = React.useState<Set<string>>(new Set());
+
+  // Expose reset function via ref or callback
+  React.useEffect(() => {
+    // This effect allows parent to trigger reset
+    const resetMarkers = () => {
+      console.log('Resetting all markers...');
+      setVisibleMarkers(new Set());
+      onReset();
+    };
+    // Store reset function globally for parent access
+    (globalThis as any).resetARMarkers = resetMarkers;
+    return () => {
+      delete (globalThis as any).resetARMarkers;
+    };
+  }, [onReset]);
 
   const createAnchorFoundHandler = (markerName: string) => (anchor: any) => {
     console.log(`${markerName} marker found!`);
@@ -213,6 +210,7 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
   const [markerDetected, setMarkerDetected] = React.useState(false);
   const [statusText, setStatusText] = React.useState('SCANNING...');
   const [statusSubtext, setStatusSubtext] = React.useState('LOOKING FOR BOARD');
+  const [resetKey, setResetKey] = React.useState(0);
 
   React.useEffect(() => {
     Animated.loop(
@@ -243,6 +241,19 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
     setStatusSubtext('LOOKING FOR BOARD');
   };
 
+  const handleReset = () => {
+    console.log('Reset button pressed');
+    setMarkerDetected(false);
+    setStatusText('SCANNING...');
+    setStatusSubtext('LOOKING FOR BOARD');
+    // Trigger reset in AR scene
+    if ((globalThis as any).resetARMarkers) {
+      (globalThis as any).resetARMarkers();
+    }
+    // Force re-render of AR scene
+    setResetKey(prev => prev + 1);
+  };
+
   const handleConfirmBoard = () => {
     if (markerDetected) {
       console.log('Board confirmed! Starting game...');
@@ -256,6 +267,7 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
 
       {/* AR Camera View */}
       <ViroARSceneNavigator
+        key={resetKey}
         autofocus={true}
         numberOfTrackedImages={3}
         initialScene={{
@@ -263,6 +275,7 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
           passProps: {
             onMarkerFound: handleMarkerFound,
             onMarkerLost: handleMarkerLost,
+            onReset: () => console.log('AR Scene reset'),
           },
         }}
         style={styles.arScene}
@@ -301,11 +314,29 @@ export default function ARGameScreen({onBack}: ARGameScreenProps) {
           <Text style={styles.statusSubtext}>{statusSubtext}</Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.iconButton}
-          activeOpacity={0.7}>
-          <CameraIcon size={20} />
-        </TouchableOpacity>
+        <View style={styles.rightButtons}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={handleReset}
+            activeOpacity={0.7}>
+            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M1 4v6h6M23 20v-6h-6"
+                stroke="#fff"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <Path
+                d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"
+                stroke="#fff"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Scanning Frame */}
@@ -511,5 +542,9 @@ const styles = StyleSheet.create({
   confirmButtonDisabled: {
     backgroundColor: 'rgba(36, 184, 207, 0.3)',
     opacity: 0.5,
+  },
+  rightButtons: {
+    flexDirection: 'row',
+    gap: 8,
   },
 });
