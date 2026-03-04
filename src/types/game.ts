@@ -195,8 +195,8 @@ export function spawnMonsters(board: TileData[][]): Monster[] {
     [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
   }
 
-  // Pick up to 2
-  return candidates.slice(0, 2).map((pos, idx) => ({
+  // Pick 1 monster
+  return candidates.slice(0, 1).map((pos, idx) => ({
     id: `monster-${idx}`,
     row: pos.row,
     col: pos.col,

@@ -22,6 +22,7 @@ import Animated, {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Path} from 'react-native-svg';
 import {Colors} from '../constants/theme';
+import FilamentCharacter from '../components/FilamentCharacter';
 import {
   TileData,
   GameCharacter,
@@ -45,8 +46,7 @@ const tilePath = require('../assets/images/Arena/2.png');
 const tilePortal = require('../assets/images/Arena/3.png');
 const tileStartBlue = require('../assets/images/Arena/4.png');
 const tileStartGreen = require('../assets/images/Arena/5.png');
-const chipCharacter = require('../assets/images/characters/robot_mascot.png');
-const glitchyCharacter = require('../assets/images/characters/Glitchy.png');
+
 
 // ─── Board dimensions ─────────────────────────────────────────────────────────
 // SB_SIZE must account for space on left/right of grid
@@ -172,11 +172,7 @@ function AnimCharacter({character, isSelected, onPress}: AnimCharacterProps) {
         ]}
       />
       <Animated.View style={animStyle}>
-        <Image
-          source={chipCharacter}
-          style={{width: charImgSize, height: charImgSize}}
-          resizeMode="contain"
-        />
+        <FilamentCharacter type="chip" size={charImgSize} isSelected={isSelected} />
       </Animated.View>
       <View style={[styles.playerBadge, {backgroundColor: character.color}]}>
         <Text style={styles.playerBadgeText}>P{character.playerId}</Text>
@@ -282,11 +278,7 @@ function StartBaseBadge({startBase, character, isCharSelected, onCharPress}: Sta
           activeOpacity={0.8}
           onPress={onCharPress}
           style={styles.sbCharContainer}>
-          <Image
-            source={chipCharacter}
-            style={{width: charImgSize, height: charImgSize}}
-            resizeMode="contain"
-          />
+          <FilamentCharacter type="chip" size={charImgSize} isSelected={isCharSelected} />
           {isCharSelected && (
             <View style={[styles.sbCharGlow, {borderColor: color, shadowColor: color}]} />
           )}
@@ -298,40 +290,15 @@ function StartBaseBadge({startBase, character, isCharSelected, onCharPress}: Sta
 
 // ─── Monster Overlay ─────────────────────────────────────────────────────────
 function MonsterOverlay() {
-  const pulse = useSharedValue(1);
-
-  useEffect(() => {
-    pulse.value = withSequence(
-      withTiming(1.15, {duration: 700, easing: Easing.out(Easing.quad)}),
-      withTiming(1, {duration: 700, easing: Easing.in(Easing.quad)}),
-    );
-    const interval = setInterval(() => {
-      pulse.value = withSequence(
-        withTiming(1.15, {duration: 700, easing: Easing.out(Easing.quad)}),
-        withTiming(1, {duration: 700, easing: Easing.in(Easing.quad)}),
-      );
-    }, 1400);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{scale: pulse.value}],
-  }));
-
   const imgSize = TILE_SIZE * 0.65;
 
   return (
-    <Animated.View style={[styles.monsterOverlay, animStyle]}>
-      <Image
-        source={glitchyCharacter}
-        style={{width: imgSize, height: imgSize}}
-        resizeMode="contain"
-      />
+    <View style={styles.monsterOverlay}>
+      <FilamentCharacter type="glitchy" size={imgSize} />
       <View style={styles.monsterBadge}>
         <Text style={styles.monsterBadgeText}>!</Text>
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
