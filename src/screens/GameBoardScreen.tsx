@@ -25,11 +25,13 @@ import {Colors} from '../constants/theme';
 import {
   TileData,
   GameCharacter,
+  StartBase,
   generateDefaultBoard,
   spawnCharacters,
   getValidMoves,
   PLAYER_COLORS,
   BOARD_SIZE,
+  START_BASES,
 } from '../types/game';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
@@ -39,14 +41,17 @@ const backgroundImg = require('../assets/images/backgrounds/background.png');
 const tileFirewall = require('../assets/images/Arena/1.png');
 const tilePath = require('../assets/images/Arena/2.png');
 const tilePortal = require('../assets/images/Arena/3.png');
-const tileStartBase1 = require('../assets/images/Arena/4.png');
-const tileStartBase4 = require('../assets/images/Arena/5.png');
+const tileStartBlue = require('../assets/images/Arena/4.png');
+const tileStartGreen = require('../assets/images/Arena/5.png');
 const chipCharacter = require('../assets/images/characters/robot_mascot.png');
 const glitchyCharacter = require('../assets/images/characters/Glitchy.png');
 
-// ─── Tile size & isometric config ─────────────────────────────────────────────
-const TILE_SIZE = Math.floor((SCREEN_WIDTH - 60) / BOARD_SIZE);
-const TILE_GAP = 3;
+// ─── Board dimensions ─────────────────────────────────────────────────────────
+// Smaller tiles to prevent clipping in isometric view
+const TILE_SIZE = Math.min(Math.floor((SCREEN_WIDTH * 0.55) / BOARD_SIZE), 60);
+const TILE_GAP = 2;
+const SB_SIZE = TILE_SIZE * 0.8; // Start bases are slightly smaller
+const SB_OFFSET = TILE_SIZE * 0.6; // Offset from grid edge
 
 // Map tile type to image
 function getTileImage(tile: TileData) {
@@ -57,12 +62,16 @@ function getTileImage(tile: TileData) {
       return tilePath;
     case 'portal':
       return tilePortal;
-    case 'startBase':
-      if (tile.owner === 4) return tileStartBase4;
-      return tileStartBase1;
     default:
       return tilePath;
   }
+}
+
+// Start base image based on owner
+function getStartBaseImage(owner: number) {
+  // We have blue (4.png) and green (5.png)
+  // Reuse blue for P1 & P3, green for P2 & P4
+  return owner === 2 || owner === 4 ? tileStartGreen : tileStartBlue;
 }
 
 // Get character image
@@ -106,36 +115,72 @@ function DiceIcon({size = 24}: {size?: number}) {
   );
 }
 
+// ─── Start Base Position Helper ───────────────────────────────────────────────
+function getStartBasePixelPos(sb: StartBase, gridWidth: number) {
+  const step = TILE_SIZE + TILE_GAP;
+  switch (sb.position) {
+    case 'bottom-left':
+      return {left: -SB_OFFSET - SB_SIZE, top: (BOARD_SIZE - 1) * step + (TILE_SIZE - SB_SIZE) / 2};
+    case 'bottom-right':
+      return {left: gridWidth + SB_OFFSET, top: (BOARD_SIZE - 1) * step + (TILE_SIZE - SB_SIZE) / 2};
+    case 'top-left':
+      return {left: -SB_OFFSET - SB_SIZE, top: (TILE_SIZE - SB_SIZE) / 2};
+    case 'top-right':
+      return {left: gridWidth + SB_OFFSET, top: (TILE_SIZE - SB_SIZE) / 2};
+  }
+}
+
+// ─── Character pixel position ─────────────────────────────────────────────────
+function getCharacterPixelPos(
+  character: GameCharacter,
+  gridWidth: number,
+) {
+  const step = TILE_SIZE + TILE_GAP;
+  if (character.onStartBase) {
+    const sb = START_BASES.find(s => s.owner === character.playerId);
+    if (sb) {
+      const pos = getStartBasePixelPos(sb, gridWidth);
+      return {
+        left: pos.left + (SB_SIZE - TILE_SIZE) / 2,
+        top: pos.top + (SB_SIZE - TILE_SIZE) / 2,
+      };
+    }
+  }
+  return {
+    left: character.col * step,
+    top: character.row * step,
+  };
+}
+
 // ─── Animated Character ───────────────────────────────────────────────────────
 interface AnimCharacterProps {
   character: GameCharacter;
   tileSize: number;
+  gridWidth: number;
   isSelected: boolean;
   onPress: () => void;
 }
 
-function AnimCharacter({character, tileSize, isSelected, onPress}: AnimCharacterProps) {
+function AnimCharacter({character, tileSize, gridWidth, isSelected, onPress}: AnimCharacterProps) {
   const bounceY = useSharedValue(0);
   const glowOpacity = useSharedValue(0);
-  const scale = useSharedValue(0);
+  const charScale = useSharedValue(0);
 
-  // Entrance animation
   useEffect(() => {
-    scale.value = withDelay(
+    charScale.value = withDelay(
       character.playerId * 200,
       withSpring(1, {stiffness: 300, damping: 15}),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Bounce when selected
   useEffect(() => {
     if (isSelected) {
       bounceY.value = withSequence(
-        withTiming(-12, {duration: 300, easing: Easing.out(Easing.quad)}),
-        withTiming(0, {duration: 300, easing: Easing.in(Easing.quad)}),
-        withTiming(-8, {duration: 250, easing: Easing.out(Easing.quad)}),
+        withTiming(-10, {duration: 250, easing: Easing.out(Easing.quad)}),
         withTiming(0, {duration: 250, easing: Easing.in(Easing.quad)}),
+        withTiming(-6, {duration: 200, easing: Easing.out(Easing.quad)}),
+        withTiming(0, {duration: 200, easing: Easing.in(Easing.quad)}),
       );
       glowOpacity.value = withTiming(1, {duration: 300});
     } else {
@@ -145,17 +190,13 @@ function AnimCharacter({character, tileSize, isSelected, onPress}: AnimCharacter
   }, [isSelected]);
 
   const animStyle = useAnimatedStyle(() => ({
-    transform: [
-      {translateY: bounceY.value},
-      {scale: scale.value},
-    ],
+    transform: [{translateY: bounceY.value}, {scale: charScale.value}],
   }));
 
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-  }));
+  const glowStyle = useAnimatedStyle(() => ({opacity: glowOpacity.value}));
 
-  const charSize = tileSize * 0.7;
+  const pos = getCharacterPixelPos(character, gridWidth);
+  const charImgSize = tileSize * 0.65;
 
   return (
     <TouchableOpacity
@@ -163,14 +204,8 @@ function AnimCharacter({character, tileSize, isSelected, onPress}: AnimCharacter
       onPress={onPress}
       style={[
         styles.characterContainer,
-        {
-          width: tileSize,
-          height: tileSize,
-          left: character.col * (tileSize + TILE_GAP),
-          top: character.row * (tileSize + TILE_GAP),
-        },
+        {width: tileSize, height: tileSize, left: pos.left, top: pos.top},
       ]}>
-      {/* Selection glow */}
       <Animated.View
         style={[
           styles.characterGlow,
@@ -184,15 +219,13 @@ function AnimCharacter({character, tileSize, isSelected, onPress}: AnimCharacter
           glowStyle,
         ]}
       />
-      {/* Character sprite */}
       <Animated.View style={animStyle}>
         <Image
           source={getCharacterImage(character.type)}
-          style={{width: charSize, height: charSize}}
+          style={{width: charImgSize, height: charImgSize}}
           resizeMode="contain"
         />
       </Animated.View>
-      {/* Player indicator */}
       <View style={[styles.playerBadge, {backgroundColor: character.color}]}>
         <Text style={styles.playerBadgeText}>P{character.playerId}</Text>
       </View>
@@ -211,18 +244,18 @@ interface TileComponentProps {
 }
 
 function TileComponent({tile, tileSize, isHighlighted, isSelected, onPress, delay}: TileComponentProps) {
-  const scale = useSharedValue(0);
-  const opacity = useSharedValue(0);
+  const tileScale = useSharedValue(0);
+  const tileOpacity = useSharedValue(0);
 
   useEffect(() => {
-    scale.value = withDelay(delay, withSpring(1, {stiffness: 300, damping: 18}));
-    opacity.value = withDelay(delay, withTiming(1, {duration: 400}));
+    tileScale.value = withDelay(delay, withSpring(1, {stiffness: 300, damping: 18}));
+    tileOpacity.value = withDelay(delay, withTiming(1, {duration: 400}));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const animStyle = useAnimatedStyle(() => ({
-    transform: [{scale: scale.value}],
-    opacity: opacity.value,
+    transform: [{scale: tileScale.value}],
+    opacity: tileOpacity.value,
   }));
 
   return (
@@ -232,19 +265,11 @@ function TileComponent({tile, tileSize, isHighlighted, isSelected, onPress, dela
         onPress={onPress}
         style={[
           styles.tileWrapper,
-          {
-            width: tileSize,
-            height: tileSize,
-          },
+          {width: tileSize, height: tileSize},
           isHighlighted && styles.tileHighlighted,
           isSelected && styles.tileSelected,
         ]}>
-        <Image
-          source={getTileImage(tile)}
-          style={styles.tileImage}
-          resizeMode="cover"
-        />
-        {/* Highlight overlay for valid moves */}
+        <Image source={getTileImage(tile)} style={styles.tileImage} resizeMode="cover" />
         {isHighlighted && (
           <View style={styles.tileHighlightOverlay}>
             <View style={styles.tileHighlightDot} />
@@ -255,12 +280,74 @@ function TileComponent({tile, tileSize, isHighlighted, isSelected, onPress, dela
   );
 }
 
+// ─── Start Base Component ─────────────────────────────────────────────────────
+interface StartBaseComponentProps {
+  startBase: StartBase;
+  gridWidth: number;
+  isActive: boolean;
+  delay: number;
+}
+
+function StartBaseComponent({startBase, gridWidth, isActive, delay}: StartBaseComponentProps) {
+  const sbScale = useSharedValue(0);
+  const sbOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    sbScale.value = withDelay(delay, withSpring(1, {stiffness: 300, damping: 18}));
+    sbOpacity.value = withDelay(delay, withTiming(1, {duration: 400}));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{scale: sbScale.value}],
+    opacity: sbOpacity.value,
+  }));
+
+  const pos = getStartBasePixelPos(startBase, gridWidth);
+  const color = PLAYER_COLORS[startBase.owner];
+
+  return (
+    <Animated.View
+      style={[
+        styles.startBaseWrapper,
+        {
+          width: SB_SIZE,
+          height: SB_SIZE,
+          left: pos.left,
+          top: pos.top,
+          borderColor: color,
+          shadowColor: color,
+        },
+        isActive && {shadowOpacity: 0.8, shadowRadius: 10},
+        animStyle,
+      ]}>
+      <Image
+        source={getStartBaseImage(startBase.owner)}
+        style={styles.tileImage}
+        resizeMode="cover"
+      />
+      {/* Player color overlay */}
+      <View
+        style={[
+          styles.startBaseOverlay,
+          {backgroundColor: color, opacity: 0.15},
+        ]}
+      />
+      {/* Label */}
+      <View style={[styles.startBaseLabel, {backgroundColor: color}]}>
+        <Text style={styles.startBaseLabelText}>P{startBase.owner}</Text>
+      </View>
+    </Animated.View>
+  );
+}
+
 // ─── Game Board ───────────────────────────────────────────────────────────────
 interface GameBoardProps {
   board: TileData[][];
   characters: GameCharacter[];
   selectedCharacter: GameCharacter | null;
   validMoves: TileData[];
+  squadSize: number;
   onTilePress: (tile: TileData) => void;
   onCharacterPress: (character: GameCharacter) => void;
 }
@@ -270,67 +357,93 @@ function GameBoard({
   characters,
   selectedCharacter,
   validMoves,
+  squadSize,
   onTilePress,
   onCharacterPress,
 }: GameBoardProps) {
-  const boardWidth = BOARD_SIZE * (TILE_SIZE + TILE_GAP) - TILE_GAP;
+  const gridWidth = BOARD_SIZE * (TILE_SIZE + TILE_GAP) - TILE_GAP;
+  // Total width includes start bases on both sides
+  const totalWidth = gridWidth + 2 * (SB_OFFSET + SB_SIZE) + 20;
 
   const validMoveIds = useMemo(
     () => new Set(validMoves.map(t => t.id)),
     [validMoves],
   );
 
+  const activeStartBases = START_BASES.filter(sb => sb.owner <= squadSize);
+
   return (
     <View style={styles.boardContainer}>
-      {/* Isometric transform wrapper */}
       <View
         style={[
           styles.isometricWrapper,
-          {
-            width: boardWidth,
-            height: boardWidth,
-          },
+          {width: totalWidth, height: gridWidth + 20},
         ]}>
-        {/* Tiles */}
-        {board.map((row, rowIdx) =>
-          row.map((tile, colIdx) => {
-            const isHighlighted = validMoveIds.has(tile.id);
-            const isSelected =
-              selectedCharacter?.row === rowIdx &&
-              selectedCharacter?.col === colIdx;
-            const delay = (rowIdx * BOARD_SIZE + colIdx) * 80;
+        {/* Center offset for the grid inside the total wrapper */}
+        <View
+          style={{
+            position: 'absolute',
+            left: SB_OFFSET + SB_SIZE + 10,
+            top: 10,
+            width: gridWidth,
+            height: gridWidth,
+          }}>
+          {/* 4x4 Grid Tiles */}
+          {board.map((row, rowIdx) =>
+            row.map((tile, colIdx) => {
+              const isHighlighted = validMoveIds.has(tile.id);
+              const isSelected =
+                selectedCharacter?.row === rowIdx &&
+                selectedCharacter?.col === colIdx &&
+                !selectedCharacter?.onStartBase;
+              const delay = (rowIdx * BOARD_SIZE + colIdx) * 60;
 
-            return (
-              <View
-                key={tile.id}
-                style={{
-                  position: 'absolute',
-                  left: colIdx * (TILE_SIZE + TILE_GAP),
-                  top: rowIdx * (TILE_SIZE + TILE_GAP),
-                }}>
-                <TileComponent
-                  tile={tile}
-                  tileSize={TILE_SIZE}
-                  isHighlighted={isHighlighted}
-                  isSelected={isSelected}
-                  onPress={() => onTilePress(tile)}
-                  delay={delay}
-                />
-              </View>
-            );
-          }),
-        )}
+              return (
+                <View
+                  key={tile.id}
+                  style={{
+                    position: 'absolute',
+                    left: colIdx * (TILE_SIZE + TILE_GAP),
+                    top: rowIdx * (TILE_SIZE + TILE_GAP),
+                  }}>
+                  <TileComponent
+                    tile={tile}
+                    tileSize={TILE_SIZE}
+                    isHighlighted={isHighlighted}
+                    isSelected={isSelected}
+                    onPress={() => onTilePress(tile)}
+                    delay={delay}
+                  />
+                </View>
+              );
+            }),
+          )}
 
-        {/* Characters */}
-        {characters.map(character => (
-          <AnimCharacter
-            key={character.id}
-            character={character}
-            tileSize={TILE_SIZE}
-            isSelected={selectedCharacter?.id === character.id}
-            onPress={() => onCharacterPress(character)}
-          />
-        ))}
+          {/* Start Bases (outside grid) */}
+          {activeStartBases.map((sb, idx) => (
+            <StartBaseComponent
+              key={sb.id}
+              startBase={sb}
+              gridWidth={gridWidth}
+              isActive={characters.some(
+                c => c.playerId === sb.owner && c.onStartBase,
+              )}
+              delay={BOARD_SIZE * BOARD_SIZE * 60 + idx * 100}
+            />
+          ))}
+
+          {/* Characters */}
+          {characters.map(character => (
+            <AnimCharacter
+              key={character.id}
+              character={character}
+              tileSize={TILE_SIZE}
+              gridWidth={gridWidth}
+              isSelected={selectedCharacter?.id === character.id}
+              onPress={() => onCharacterPress(character)}
+            />
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -341,10 +454,10 @@ interface TurnInfoProps {
   currentPlayer: number;
   turnCount: number;
   selectedCharacter: GameCharacter | null;
-  onRollDice: () => void;
+  onEndTurn: () => void;
 }
 
-function TurnInfo({currentPlayer, turnCount, selectedCharacter, onRollDice}: TurnInfoProps) {
+function TurnInfo({currentPlayer, turnCount, selectedCharacter, onEndTurn}: TurnInfoProps) {
   const color = PLAYER_COLORS[currentPlayer] || '#22d3ee';
 
   return (
@@ -359,14 +472,13 @@ function TurnInfo({currentPlayer, turnCount, selectedCharacter, onRollDice}: Tur
         <Text style={styles.turnCountText}>Turn {turnCount}</Text>
       </View>
 
-      {selectedCharacter && (
+      {selectedCharacter ? (
         <Text style={styles.turnHint}>
-          Tap a highlighted tile to move{' '}
-          {selectedCharacter.type === 'chip' ? 'Chip' : 'Glitchy'}
+          {selectedCharacter.onStartBase
+            ? 'Tap the entry tile to leave Start Base'
+            : `Tap a highlighted tile to move ${selectedCharacter.type === 'chip' ? 'Chip' : 'Glitchy'}`}
         </Text>
-      )}
-
-      {!selectedCharacter && (
+      ) : (
         <Text style={styles.turnHint}>
           Tap your character to select, then move
         </Text>
@@ -374,7 +486,7 @@ function TurnInfo({currentPlayer, turnCount, selectedCharacter, onRollDice}: Tur
 
       <TouchableOpacity
         style={[styles.diceButton, {backgroundColor: color}]}
-        onPress={onRollDice}
+        onPress={onEndTurn}
         activeOpacity={0.8}>
         <DiceIcon size={20} />
         <Text style={styles.diceButtonText}>End Turn</Text>
@@ -392,7 +504,6 @@ interface GameBoardScreenProps {
 export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProps) {
   const insets = useSafeAreaInsets();
 
-  // Game state
   const [board] = useState<TileData[][]>(() => generateDefaultBoard());
   const [characters, setCharacters] = useState<GameCharacter[]>([]);
   const [selectedCharacter, setSelectedCharacter] = useState<GameCharacter | null>(null);
@@ -402,27 +513,23 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
 
   // Spawn characters on mount
   useEffect(() => {
-    const spawned = spawnCharacters(board, squadSize);
+    const spawned = spawnCharacters(squadSize);
     setCharacters(spawned);
-  }, [board, squadSize]);
+  }, [squadSize]);
 
   // Handle character selection
   const handleCharacterPress = useCallback(
     (character: GameCharacter) => {
-      // Only allow selecting current player's character
       if (character.playerId !== currentPlayer) {
         Alert.alert('Not Your Turn', `It's Player ${currentPlayer}'s turn!`);
         return;
       }
-
       if (selectedCharacter?.id === character.id) {
-        // Deselect
         setSelectedCharacter(null);
         setValidMoves([]);
       } else {
-        // Select and show valid moves
         setSelectedCharacter(character);
-        const moves = getValidMoves(board, character.row, character.col);
+        const moves = getValidMoves(board, character);
         setValidMoves(moves);
       }
     },
@@ -434,27 +541,24 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
     (tile: TileData) => {
       if (!selectedCharacter) return;
 
-      // Check if it's a valid move
       const isValid = validMoves.some(m => m.id === tile.id);
       if (!isValid) {
-        // Deselect if tapping non-valid tile
         setSelectedCharacter(null);
         setValidMoves([]);
         return;
       }
 
-      // Move character
+      // Move character to tile (leave start base if on one)
       setCharacters(prev =>
         prev.map(c =>
           c.id === selectedCharacter.id
-            ? {...c, row: tile.row, col: tile.col}
+            ? {...c, row: tile.row, col: tile.col, onStartBase: false}
             : c,
         ),
       );
 
-      // Handle special tiles
+      // Handle portal teleportation
       if (tile.type === 'portal') {
-        // Find another portal to teleport to
         const otherPortals: TileData[] = [];
         board.forEach(row =>
           row.forEach(t => {
@@ -466,7 +570,6 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
         if (otherPortals.length > 0) {
           const target =
             otherPortals[Math.floor(Math.random() * otherPortals.length)];
-          // Delay teleport for visual effect
           setTimeout(() => {
             setCharacters(prev =>
               prev.map(c =>
@@ -475,12 +578,11 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
                   : c,
               ),
             );
-            Alert.alert('Portal!', `Teleported to (${target.row}, ${target.col})!`);
+            Alert.alert('Portal!', 'Teleported to another portal!');
           }, 400);
         }
       }
 
-      // Clear selection
       setSelectedCharacter(null);
       setValidMoves([]);
     },
@@ -521,6 +623,7 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
           characters={characters}
           selectedCharacter={selectedCharacter}
           validMoves={validMoves}
+          squadSize={squadSize}
           onTilePress={handleTilePress}
           onCharacterPress={handleCharacterPress}
         />
@@ -532,7 +635,7 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
           currentPlayer={currentPlayer}
           turnCount={turnCount}
           selectedCharacter={selectedCharacter}
-          onRollDice={handleEndTurn}
+          onEndTurn={handleEndTurn}
         />
       </View>
     </ImageBackground>
@@ -545,7 +648,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -571,7 +673,6 @@ const styles = StyleSheet.create({
     textShadowOffset: {width: 0, height: 0},
     textShadowRadius: 10,
   },
-  // Board
   boardSection: {
     flex: 1,
     alignItems: 'center',
@@ -580,7 +681,6 @@ const styles = StyleSheet.create({
   boardContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    // Isometric perspective transform
     transform: [
       {perspective: 900},
       {rotateX: '50deg'},
@@ -589,10 +689,11 @@ const styles = StyleSheet.create({
   },
   isometricWrapper: {
     position: 'relative',
+    overflow: 'visible',
   },
-  // Tiles
+  // Grid tiles
   tileWrapper: {
-    borderRadius: 8,
+    borderRadius: 6,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
@@ -626,12 +727,39 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tileHighlightDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: 'rgba(74, 222, 128, 0.7)',
     borderWidth: 2,
     borderColor: '#fff',
+  },
+  // Start Bases (outside grid)
+  startBaseWrapper: {
+    position: 'absolute',
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 2,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  startBaseOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  startBaseLabel: {
+    position: 'absolute',
+    bottom: 2,
+    alignSelf: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  startBaseLabelText: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#fff',
   },
   // Characters
   characterContainer: {
@@ -650,14 +778,14 @@ const styles = StyleSheet.create({
   },
   playerBadge: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
+    bottom: 0,
+    right: 0,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 6,
   },
   playerBadgeText: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '800',
     color: '#fff',
   },
