@@ -6,6 +6,7 @@ import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import GameTutorialScreen from '../screens/GameTutorialScreen';
 import PlayerSelectionScreen from '../screens/PlayerSelectionScreen';
+import GameBoardScreen from '../screens/GameBoardScreen';
 
 export type RootStackParamList = {
   Onboarding: undefined;
@@ -13,6 +14,7 @@ export type RootStackParamList = {
   Home: undefined;
   GameTutorial: undefined;
   PlayerSelection: undefined;
+  GameBoard: {squadSize: number};
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -43,6 +45,11 @@ export default function AppNavigator() {
           name="PlayerSelection"
           component={PlayerSelectionWrapper}
           options={{animation: 'slide_from_right'}}
+        />
+        <Stack.Screen
+          name="GameBoard"
+          component={GameBoardWrapper}
+          options={{animation: 'fade', gestureEnabled: false}}
         />
       </Stack.Navigator>
     </NavigationContainer>
@@ -85,10 +92,18 @@ function PlayerSelectionWrapper({navigation}: any) {
     <PlayerSelectionScreen
       onBack={() => navigation.goBack()}
       onContinue={(squadSize: number) => {
-        // TODO: Navigate to actual game screen with squadSize
-        console.log('Start game with', squadSize, 'players');
-        navigation.goBack();
+        navigation.navigate('GameBoard', {squadSize});
       }}
+    />
+  );
+}
+
+function GameBoardWrapper({navigation, route}: any) {
+  const {squadSize} = route.params;
+  return (
+    <GameBoardScreen
+      squadSize={squadSize}
+      onBack={() => navigation.goBack()}
     />
   );
 }
