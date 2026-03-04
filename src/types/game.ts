@@ -19,18 +19,22 @@ export interface StartBase {
   position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 }
 
-// ─── Character Types ──────────────────────────────────────────────────────────
-export type CharacterType = 'chip' | 'glitchy';
-
+// ─── Character Types ───────────────────────────────────────────────────────────
+// Player characters always use the robot (chip) asset
 export interface GameCharacter {
   id: string;
-  type: CharacterType;
   playerId: number;
-  // -1 means on start base (use startBaseId)
   row: number;
   col: number;
   onStartBase: boolean;
   color: string;
+}
+
+// ─── Monster (Glitchy) ────────────────────────────────────────────────────
+export interface Monster {
+  id: string;
+  row: number;
+  col: number;
 }
 
 // ─── Board Configuration ──────────────────────────────────────────────────────
@@ -52,42 +56,54 @@ export const START_BASES: StartBase[] = [
   {id: 'sb-4', owner: 4, entryRow: 0, entryCol: 3, position: 'top-right'},
 ];
 
-// Default 4x4 board layout - ONLY path, portal, firewall
-// No start bases inside the grid
-//
-// Layout (row, col):
-//   (0,0) Path     | (0,1) Portal   | (0,2) Path     | (0,3) Firewall
-//   (1,0) Firewall | (1,1) Path     | (1,2) Firewall  | (1,3) Path
-//   (2,0) Path     | (2,1) Portal   | (2,2) Portal    | (2,3) Path
-//   (3,0) Path     | (3,1) Firewall | (3,2) Path      | (3,3) Path
-//
+// Generate a randomized 4x4 board with rules:
+// - Exactly 2 portals (placed randomly, not on entry corners)
+// - 3–4 firewalls (random positions, not on entry corners)
+// - Rest are path tiles
+// - Entry corner tiles (0,0), (0,3), (3,0), (3,3) are always 'path'
 export function generateDefaultBoard(): TileData[][] {
-  const board: TileData[][] = [
-    [
-      {type: 'path', id: 'tile-0-0', row: 0, col: 0},
-      {type: 'portal', id: 'tile-0-1', row: 0, col: 1},
-      {type: 'path', id: 'tile-0-2', row: 0, col: 2},
-      {type: 'firewall', id: 'tile-0-3', row: 0, col: 3},
-    ],
-    [
-      {type: 'firewall', id: 'tile-1-0', row: 1, col: 0},
-      {type: 'path', id: 'tile-1-1', row: 1, col: 1},
-      {type: 'firewall', id: 'tile-1-2', row: 1, col: 2},
-      {type: 'path', id: 'tile-1-3', row: 1, col: 3},
-    ],
-    [
-      {type: 'path', id: 'tile-2-0', row: 2, col: 0},
-      {type: 'portal', id: 'tile-2-1', row: 2, col: 1},
-      {type: 'portal', id: 'tile-2-2', row: 2, col: 2},
-      {type: 'path', id: 'tile-2-3', row: 2, col: 3},
-    ],
-    [
-      {type: 'path', id: 'tile-3-0', row: 3, col: 0},
-      {type: 'firewall', id: 'tile-3-1', row: 3, col: 1},
-      {type: 'path', id: 'tile-3-2', row: 3, col: 2},
-      {type: 'path', id: 'tile-3-3', row: 3, col: 3},
-    ],
-  ];
+  const ENTRY_CORNERS = new Set(['0-0', '0-3', '3-0', '3-3']);
+  const eligible: Array<{row: number; col: number}> = [];
+
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      if (!ENTRY_CORNERS.has(`${r}-${c}`)) {
+        eligible.push({row: r, col: c});
+      }
+    }
+  }
+
+  // Shuffle eligible positions
+  for (let i = eligible.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
+  }
+
+  // Assign: first 2 → portal, next 3 → firewall, rest → path
+  const PORTAL_COUNT = 2;
+  const FIREWALL_COUNT = 3;
+  const typeMap: Record<string, TileType> = {};
+  eligible.forEach(({row, col}, idx) => {
+    if (idx < PORTAL_COUNT) {
+      typeMap[`${row}-${col}`] = 'portal';
+    } else if (idx < PORTAL_COUNT + FIREWALL_COUNT) {
+      typeMap[`${row}-${col}`] = 'firewall';
+    } else {
+      typeMap[`${row}-${col}`] = 'path';
+    }
+  });
+
+  // Build the board
+  const board: TileData[][] = [];
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    const row: TileData[] = [];
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      const key = `${r}-${c}`;
+      const type: TileType = ENTRY_CORNERS.has(key) ? 'path' : typeMap[key];
+      row.push({type, id: `tile-${r}-${c}`, row: r, col: c});
+    }
+    board.push(row);
+  }
   return board;
 }
 
@@ -138,17 +154,15 @@ export function getValidMoves(
 }
 
 // Spawn characters for all players on their start bases
+// All player characters use the robot (chip) asset
 export function spawnCharacters(playerCount: number): GameCharacter[] {
   const characters: GameCharacter[] = [];
 
   for (let i = 1; i <= playerCount; i++) {
     const startBase = START_BASES.find(sb => sb.owner === i);
     if (!startBase) continue;
-    // Randomly choose chip or glitchy
-    const type: CharacterType = Math.random() > 0.5 ? 'chip' : 'glitchy';
     characters.push({
       id: `player-${i}`,
-      type,
       playerId: i,
       row: startBase.entryRow,
       col: startBase.entryCol,
@@ -158,4 +172,33 @@ export function spawnCharacters(playerCount: number): GameCharacter[] {
   }
 
   return characters;
+}
+
+// Spawn 2 Glitchy monsters on random non-corner, path-only tiles
+// Avoids the 4 entry corners so monsters don't block player entry
+export function spawnMonsters(board: TileData[][]): Monster[] {
+  const ENTRY_CORNERS = new Set(['0-0', '0-3', '3-0', '3-3']);
+  const candidates: Array<{row: number; col: number}> = [];
+
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      const tile = board[r][c];
+      if (!ENTRY_CORNERS.has(`${r}-${c}`) && tile.type === 'path') {
+        candidates.push({row: r, col: c});
+      }
+    }
+  }
+
+  // Shuffle candidates
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+
+  // Pick up to 2
+  return candidates.slice(0, 2).map((pos, idx) => ({
+    id: `monster-${idx}`,
+    row: pos.row,
+    col: pos.col,
+  }));
 }

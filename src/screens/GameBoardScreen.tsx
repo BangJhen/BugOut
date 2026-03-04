@@ -25,9 +25,11 @@ import {Colors} from '../constants/theme';
 import {
   TileData,
   GameCharacter,
+  Monster,
   StartBase,
   generateDefaultBoard,
   spawnCharacters,
+  spawnMonsters,
   getValidMoves,
   PLAYER_COLORS,
   BOARD_SIZE,
@@ -47,11 +49,14 @@ const chipCharacter = require('../assets/images/characters/robot_mascot.png');
 const glitchyCharacter = require('../assets/images/characters/Glitchy.png');
 
 // ─── Board dimensions ─────────────────────────────────────────────────────────
-// Smaller tiles to prevent clipping in isometric view
-const TILE_SIZE = Math.min(Math.floor((SCREEN_WIDTH * 0.55) / BOARD_SIZE), 60);
-const TILE_GAP = 2;
-const SB_SIZE = TILE_SIZE * 0.8; // Start bases are slightly smaller
-const SB_OFFSET = TILE_SIZE * 0.6; // Offset from grid edge
+// SB_SIZE must account for space on left/right of grid
+// Total width = SB_SIZE + GAP + GRID + GAP + SB_SIZE = SCREEN_WIDTH - outer padding
+const OUTER_PAD = 12;
+const TILE_GAP = 3;
+const SB_GAP = 6;
+const SB_SIZE = 56;
+const GRID_W = SCREEN_WIDTH - OUTER_PAD * 2 - SB_SIZE * 2 - SB_GAP * 2;
+const TILE_SIZE = Math.floor((GRID_W - TILE_GAP * (BOARD_SIZE - 1)) / BOARD_SIZE);
 
 // Map tile type to image
 function getTileImage(tile: TileData) {
@@ -74,10 +79,6 @@ function getStartBaseImage(owner: number) {
   return owner === 2 || owner === 4 ? tileStartGreen : tileStartBlue;
 }
 
-// Get character image
-function getCharacterImage(type: 'chip' | 'glitchy') {
-  return type === 'chip' ? chipCharacter : glitchyCharacter;
-}
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 function BackIcon({size = 24}: {size?: number}) {
@@ -115,60 +116,21 @@ function DiceIcon({size = 24}: {size?: number}) {
   );
 }
 
-// ─── Start Base Position Helper ───────────────────────────────────────────────
-function getStartBasePixelPos(sb: StartBase, gridWidth: number) {
-  const step = TILE_SIZE + TILE_GAP;
-  switch (sb.position) {
-    case 'bottom-left':
-      return {left: -SB_OFFSET - SB_SIZE, top: (BOARD_SIZE - 1) * step + (TILE_SIZE - SB_SIZE) / 2};
-    case 'bottom-right':
-      return {left: gridWidth + SB_OFFSET, top: (BOARD_SIZE - 1) * step + (TILE_SIZE - SB_SIZE) / 2};
-    case 'top-left':
-      return {left: -SB_OFFSET - SB_SIZE, top: (TILE_SIZE - SB_SIZE) / 2};
-    case 'top-right':
-      return {left: gridWidth + SB_OFFSET, top: (TILE_SIZE - SB_SIZE) / 2};
-  }
-}
-
-// ─── Character pixel position ─────────────────────────────────────────────────
-function getCharacterPixelPos(
-  character: GameCharacter,
-  gridWidth: number,
-) {
-  const step = TILE_SIZE + TILE_GAP;
-  if (character.onStartBase) {
-    const sb = START_BASES.find(s => s.owner === character.playerId);
-    if (sb) {
-      const pos = getStartBasePixelPos(sb, gridWidth);
-      return {
-        left: pos.left + (SB_SIZE - TILE_SIZE) / 2,
-        top: pos.top + (SB_SIZE - TILE_SIZE) / 2,
-      };
-    }
-  }
-  return {
-    left: character.col * step,
-    top: character.row * step,
-  };
-}
-
-// ─── Animated Character ───────────────────────────────────────────────────────
+// ─── Animated Character overlay (rendered inside a tile cell) ─────────────────
 interface AnimCharacterProps {
   character: GameCharacter;
-  tileSize: number;
-  gridWidth: number;
   isSelected: boolean;
   onPress: () => void;
 }
 
-function AnimCharacter({character, tileSize, gridWidth, isSelected, onPress}: AnimCharacterProps) {
+function AnimCharacter({character, isSelected, onPress}: AnimCharacterProps) {
   const bounceY = useSharedValue(0);
   const glowOpacity = useSharedValue(0);
   const charScale = useSharedValue(0);
 
   useEffect(() => {
     charScale.value = withDelay(
-      character.playerId * 200,
+      character.playerId * 150,
       withSpring(1, {stiffness: 300, damping: 15}),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -177,14 +139,12 @@ function AnimCharacter({character, tileSize, gridWidth, isSelected, onPress}: An
   useEffect(() => {
     if (isSelected) {
       bounceY.value = withSequence(
-        withTiming(-10, {duration: 250, easing: Easing.out(Easing.quad)}),
-        withTiming(0, {duration: 250, easing: Easing.in(Easing.quad)}),
         withTiming(-6, {duration: 200, easing: Easing.out(Easing.quad)}),
         withTiming(0, {duration: 200, easing: Easing.in(Easing.quad)}),
       );
-      glowOpacity.value = withTiming(1, {duration: 300});
+      glowOpacity.value = withTiming(1, {duration: 200});
     } else {
-      glowOpacity.value = withTiming(0, {duration: 200});
+      glowOpacity.value = withTiming(0, {duration: 150});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSelected]);
@@ -194,25 +154,17 @@ function AnimCharacter({character, tileSize, gridWidth, isSelected, onPress}: An
   }));
 
   const glowStyle = useAnimatedStyle(() => ({opacity: glowOpacity.value}));
-
-  const pos = getCharacterPixelPos(character, gridWidth);
-  const charImgSize = tileSize * 0.65;
+  const charImgSize = TILE_SIZE * 0.6;
 
   return (
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={onPress}
-      style={[
-        styles.characterContainer,
-        {width: tileSize, height: tileSize, left: pos.left, top: pos.top},
-      ]}>
+      style={styles.characterContainer}>
       <Animated.View
         style={[
           styles.characterGlow,
           {
-            width: tileSize - 4,
-            height: tileSize - 4,
-            borderRadius: (tileSize - 4) / 2,
             borderColor: character.color,
             shadowColor: character.color,
           },
@@ -221,7 +173,7 @@ function AnimCharacter({character, tileSize, gridWidth, isSelected, onPress}: An
       />
       <Animated.View style={animStyle}>
         <Image
-          source={getCharacterImage(character.type)}
+          source={chipCharacter}
           style={{width: charImgSize, height: charImgSize}}
           resizeMode="contain"
         />
@@ -233,23 +185,37 @@ function AnimCharacter({character, tileSize, gridWidth, isSelected, onPress}: An
   );
 }
 
-// ─── Tile Component ───────────────────────────────────────────────────────────
-interface TileComponentProps {
+// ─── Tile Cell ─────────────────────────────────────────────────────────────────
+// Renders one tile + any player character + any monster on it
+interface TileCellProps {
   tile: TileData;
-  tileSize: number;
   isHighlighted: boolean;
   isSelected: boolean;
-  onPress: () => void;
+  character: GameCharacter | null;
+  isCharSelected: boolean;
+  hasMonster: boolean;
+  onTilePress: () => void;
+  onCharPress: () => void;
   delay: number;
 }
 
-function TileComponent({tile, tileSize, isHighlighted, isSelected, onPress, delay}: TileComponentProps) {
+function TileCell({
+  tile,
+  isHighlighted,
+  isSelected,
+  character,
+  isCharSelected,
+  hasMonster,
+  onTilePress,
+  onCharPress,
+  delay,
+}: TileCellProps) {
   const tileScale = useSharedValue(0);
   const tileOpacity = useSharedValue(0);
 
   useEffect(() => {
-    tileScale.value = withDelay(delay, withSpring(1, {stiffness: 300, damping: 18}));
-    tileOpacity.value = withDelay(delay, withTiming(1, {duration: 400}));
+    tileScale.value = withDelay(delay, withSpring(1, {stiffness: 280, damping: 18}));
+    tileOpacity.value = withDelay(delay, withTiming(1, {duration: 350}));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -259,13 +225,12 @@ function TileComponent({tile, tileSize, isHighlighted, isSelected, onPress, dela
   }));
 
   return (
-    <Animated.View style={animStyle}>
+    <Animated.View style={[styles.tileCell, animStyle]}>
       <TouchableOpacity
         activeOpacity={0.7}
-        onPress={onPress}
+        onPress={onTilePress}
         style={[
           styles.tileWrapper,
-          {width: tileSize, height: tileSize},
           isHighlighted && styles.tileHighlighted,
           isSelected && styles.tileSelected,
         ]}>
@@ -276,66 +241,95 @@ function TileComponent({tile, tileSize, isHighlighted, isSelected, onPress, dela
           </View>
         )}
       </TouchableOpacity>
+      {character && (
+        <AnimCharacter
+          character={character}
+          isSelected={isCharSelected}
+          onPress={onCharPress}
+        />
+      )}
+      {hasMonster && !character && <MonsterOverlay />}
     </Animated.View>
   );
 }
 
-// ─── Start Base Component ─────────────────────────────────────────────────────
-interface StartBaseComponentProps {
+// ─── Start Base Badge ─────────────────────────────────────────────────────────
+// Rendered as a small badge at each corner of the grid
+interface StartBaseBadgeProps {
   startBase: StartBase;
-  gridWidth: number;
-  isActive: boolean;
-  delay: number;
+  character: GameCharacter | null;
+  isCharSelected: boolean;
+  onCharPress: () => void;
 }
 
-function StartBaseComponent({startBase, gridWidth, isActive, delay}: StartBaseComponentProps) {
-  const sbScale = useSharedValue(0);
-  const sbOpacity = useSharedValue(0);
-
-  useEffect(() => {
-    sbScale.value = withDelay(delay, withSpring(1, {stiffness: 300, damping: 18}));
-    sbOpacity.value = withDelay(delay, withTiming(1, {duration: 400}));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{scale: sbScale.value}],
-    opacity: sbOpacity.value,
-  }));
-
-  const pos = getStartBasePixelPos(startBase, gridWidth);
+function StartBaseBadge({startBase, character, isCharSelected, onCharPress}: StartBaseBadgeProps) {
   const color = PLAYER_COLORS[startBase.owner];
+  const charImgSize = SB_SIZE * 0.55;
 
   return (
-    <Animated.View
-      style={[
-        styles.startBaseWrapper,
-        {
-          width: SB_SIZE,
-          height: SB_SIZE,
-          left: pos.left,
-          top: pos.top,
-          borderColor: color,
-          shadowColor: color,
-        },
-        isActive && {shadowOpacity: 0.8, shadowRadius: 10},
-        animStyle,
-      ]}>
+    <View style={[styles.startBaseWrapper, {borderColor: color, shadowColor: color}]}>
       <Image
         source={getStartBaseImage(startBase.owner)}
         style={styles.tileImage}
         resizeMode="cover"
       />
-      {/* Player color overlay */}
-      <View
-        style={[
-          styles.startBaseOverlay,
-          {backgroundColor: color, opacity: 0.15},
-        ]}
-      />
-      {/* Label */}
+      <View style={[styles.startBaseOverlay, {backgroundColor: color}]} />
       <View style={[styles.startBaseLabel, {backgroundColor: color}]}>
         <Text style={styles.startBaseLabelText}>P{startBase.owner}</Text>
+      </View>
+      {character && (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={onCharPress}
+          style={styles.sbCharContainer}>
+          <Image
+            source={chipCharacter}
+            style={{width: charImgSize, height: charImgSize}}
+            resizeMode="contain"
+          />
+          {isCharSelected && (
+            <View style={[styles.sbCharGlow, {borderColor: color, shadowColor: color}]} />
+          )}
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+// ─── Monster Overlay ─────────────────────────────────────────────────────────
+function MonsterOverlay() {
+  const pulse = useSharedValue(1);
+
+  useEffect(() => {
+    pulse.value = withSequence(
+      withTiming(1.15, {duration: 700, easing: Easing.out(Easing.quad)}),
+      withTiming(1, {duration: 700, easing: Easing.in(Easing.quad)}),
+    );
+    const interval = setInterval(() => {
+      pulse.value = withSequence(
+        withTiming(1.15, {duration: 700, easing: Easing.out(Easing.quad)}),
+        withTiming(1, {duration: 700, easing: Easing.in(Easing.quad)}),
+      );
+    }, 1400);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{scale: pulse.value}],
+  }));
+
+  const imgSize = TILE_SIZE * 0.65;
+
+  return (
+    <Animated.View style={[styles.monsterOverlay, animStyle]}>
+      <Image
+        source={glitchyCharacter}
+        style={{width: imgSize, height: imgSize}}
+        resizeMode="contain"
+      />
+      <View style={styles.monsterBadge}>
+        <Text style={styles.monsterBadgeText}>!</Text>
       </View>
     </Animated.View>
   );
@@ -345,6 +339,7 @@ function StartBaseComponent({startBase, gridWidth, isActive, delay}: StartBaseCo
 interface GameBoardProps {
   board: TileData[][];
   characters: GameCharacter[];
+  monsters: Monster[];
   selectedCharacter: GameCharacter | null;
   validMoves: TileData[];
   squadSize: number;
@@ -355,16 +350,13 @@ interface GameBoardProps {
 function GameBoard({
   board,
   characters,
+  monsters,
   selectedCharacter,
   validMoves,
   squadSize,
   onTilePress,
   onCharacterPress,
 }: GameBoardProps) {
-  const gridWidth = BOARD_SIZE * (TILE_SIZE + TILE_GAP) - TILE_GAP;
-  // Total width includes start bases on both sides
-  const totalWidth = gridWidth + 2 * (SB_OFFSET + SB_SIZE) + 20;
-
   const validMoveIds = useMemo(
     () => new Set(validMoves.map(t => t.id)),
     [validMoves],
@@ -372,78 +364,94 @@ function GameBoard({
 
   const activeStartBases = START_BASES.filter(sb => sb.owner <= squadSize);
 
+  // Build a lookup: 'row-col' → character (only on-grid characters)
+  const charMap = useMemo(() => {
+    const m: Record<string, GameCharacter> = {};
+    characters.forEach(c => {
+      if (!c.onStartBase) {
+        m[`${c.row}-${c.col}`] = c;
+      }
+    });
+    return m;
+  }, [characters]);
+
+  // Monster lookup: 'row-col' → true
+  const monsterMap = useMemo(() => {
+    const m: Record<string, boolean> = {};
+    monsters.forEach(mon => { m[`${mon.row}-${mon.col}`] = true; });
+    return m;
+  }, [monsters]);
+
+  // Start base lookup: owner → character (only on-start-base characters)
+  const sbCharMap = useMemo(() => {
+    const m: Record<number, GameCharacter> = {};
+    characters.forEach(c => {
+      if (c.onStartBase) {
+        m[c.playerId] = c;
+      }
+    });
+    return m;
+  }, [characters]);
+
+  // Helper to render a SB or empty placeholder
+  const renderSB = (pos: StartBase['position']) => {
+    const sb = activeStartBases.find(s => s.position === pos);
+    if (!sb) return <View style={{width: SB_SIZE, height: SB_SIZE}} />;
+    const c = sbCharMap[sb.owner] ?? null;
+    return (
+      <StartBaseBadge
+        startBase={sb}
+        character={c}
+        isCharSelected={c !== null && selectedCharacter?.id === c.id}
+        onCharPress={() => { if (c) {onCharacterPress(c);} }}
+      />
+    );
+  };
+
+  const gridSize = TILE_SIZE * BOARD_SIZE + TILE_GAP * (BOARD_SIZE - 1);
+
   return (
-    <View style={styles.boardContainer}>
-      <View
-        style={[
-          styles.isometricWrapper,
-          {width: totalWidth, height: gridWidth + 20},
-        ]}>
-        {/* Center offset for the grid inside the total wrapper */}
-        <View
-          style={{
-            position: 'absolute',
-            left: SB_OFFSET + SB_SIZE + 10,
-            top: 10,
-            width: gridWidth,
-            height: gridWidth,
-          }}>
-          {/* 4x4 Grid Tiles */}
-          {board.map((row, rowIdx) =>
-            row.map((tile, colIdx) => {
-              const isHighlighted = validMoveIds.has(tile.id);
-              const isSelected =
-                selectedCharacter?.row === rowIdx &&
-                selectedCharacter?.col === colIdx &&
-                !selectedCharacter?.onStartBase;
-              const delay = (rowIdx * BOARD_SIZE + colIdx) * 60;
+    <View style={styles.boardOuter}>
+      {/* Row 1: top-left SB above col-0, top-right SB above col-3 */}
+      <View style={[styles.sbTopRow, {width: gridSize}]}>
+        {renderSB('top-left')}
+        {renderSB('top-right')}
+      </View>
 
-              return (
-                <View
-                  key={tile.id}
-                  style={{
-                    position: 'absolute',
-                    left: colIdx * (TILE_SIZE + TILE_GAP),
-                    top: rowIdx * (TILE_SIZE + TILE_GAP),
-                  }}>
-                  <TileComponent
-                    tile={tile}
-                    tileSize={TILE_SIZE}
-                    isHighlighted={isHighlighted}
-                    isSelected={isSelected}
-                    onPress={() => onTilePress(tile)}
-                    delay={delay}
-                  />
-                </View>
-              );
-            }),
-          )}
+      {/* Row 2: 4×4 grid only */}
+      <View style={[styles.grid, {width: gridSize, height: gridSize}]}>
+        {board.map((row, rowIdx) =>
+          row.map((tile, colIdx) => {
+            const key = `${rowIdx}-${colIdx}`;
+            const isHighlighted = validMoveIds.has(tile.id);
+            const charHere = charMap[key] ?? null;
+            const isGridSelected =
+              selectedCharacter?.row === rowIdx &&
+              selectedCharacter?.col === colIdx &&
+              !selectedCharacter?.onStartBase;
+            const delay = (rowIdx * BOARD_SIZE + colIdx) * 50;
+            return (
+              <TileCell
+                key={tile.id}
+                tile={tile}
+                isHighlighted={isHighlighted}
+                isSelected={isGridSelected}
+                character={charHere}
+                isCharSelected={charHere ? selectedCharacter?.id === charHere.id : false}
+                hasMonster={!!monsterMap[key]}
+                onTilePress={() => onTilePress(tile)}
+                onCharPress={() => charHere && onCharacterPress(charHere)}
+                delay={delay}
+              />
+            );
+          }),
+        )}
+      </View>
 
-          {/* Start Bases (outside grid) */}
-          {activeStartBases.map((sb, idx) => (
-            <StartBaseComponent
-              key={sb.id}
-              startBase={sb}
-              gridWidth={gridWidth}
-              isActive={characters.some(
-                c => c.playerId === sb.owner && c.onStartBase,
-              )}
-              delay={BOARD_SIZE * BOARD_SIZE * 60 + idx * 100}
-            />
-          ))}
-
-          {/* Characters */}
-          {characters.map(character => (
-            <AnimCharacter
-              key={character.id}
-              character={character}
-              tileSize={TILE_SIZE}
-              gridWidth={gridWidth}
-              isSelected={selectedCharacter?.id === character.id}
-              onPress={() => onCharacterPress(character)}
-            />
-          ))}
-        </View>
+      {/* Row 3: bottom-left SB below col-0, bottom-right SB below col-3 */}
+      <View style={[styles.sbBottomRow, {width: gridSize}]}>
+        {renderSB('bottom-left')}
+        {renderSB('bottom-right')}
       </View>
     </View>
   );
@@ -476,7 +484,7 @@ function TurnInfo({currentPlayer, turnCount, selectedCharacter, onEndTurn}: Turn
         <Text style={styles.turnHint}>
           {selectedCharacter.onStartBase
             ? 'Tap the entry tile to leave Start Base'
-            : `Tap a highlighted tile to move ${selectedCharacter.type === 'chip' ? 'Chip' : 'Glitchy'}`}
+            : 'Tap a highlighted tile to move your robot'}
         </Text>
       ) : (
         <Text style={styles.turnHint}>
@@ -506,16 +514,22 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
 
   const [board] = useState<TileData[][]>(() => generateDefaultBoard());
   const [characters, setCharacters] = useState<GameCharacter[]>([]);
+  const [monsters, setMonsters] = useState<Monster[]>([]);
   const [selectedCharacter, setSelectedCharacter] = useState<GameCharacter | null>(null);
   const [validMoves, setValidMoves] = useState<TileData[]>([]);
   const [currentPlayer, setCurrentPlayer] = useState(1);
   const [turnCount, setTurnCount] = useState(1);
 
-  // Spawn characters on mount
+  // Spawn characters + monsters on mount
   useEffect(() => {
     const spawned = spawnCharacters(squadSize);
     setCharacters(spawned);
   }, [squadSize]);
+
+  useEffect(() => {
+    const spawnedMonsters = spawnMonsters(board);
+    setMonsters(spawnedMonsters);
+  }, [board]);
 
   // Handle character selection
   const handleCharacterPress = useCallback(
@@ -621,6 +635,7 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
         <GameBoard
           board={board}
           characters={characters}
+          monsters={monsters}
           selectedCharacter={selectedCharacter}
           validMoves={validMoves}
           squadSize={squadSize}
@@ -654,7 +669,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 12,
-    zIndex: 10,
   },
   headerButton: {
     width: 40,
@@ -677,26 +691,55 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: OUTER_PAD,
   },
-  boardContainer: {
+  // ── Flat grid layout ──────────────────────────────────────────────────
+  boardOuter: {
     alignItems: 'center',
-    justifyContent: 'center',
-    transform: [
-      {perspective: 900},
-      {rotateX: '50deg'},
-      {rotateZ: '-45deg'},
-    ],
   },
-  isometricWrapper: {
+  // top row holds top-left/top-right SBs above the grid corners
+  sbTopRow: {
+    flexDirection: 'row',
+    // width = SB + gap + grid + gap + SB
+    width: SB_SIZE * 2 + SB_GAP * 2 + TILE_SIZE * BOARD_SIZE + TILE_GAP * (BOARD_SIZE - 1),
+    justifyContent: 'space-between',
+    marginBottom: SB_GAP,
+  },
+  // mid row holds left SB, grid, right SB — all vertically centered
+  sbMidRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SB_GAP,
+  },
+  // bottom row holds bottom-left/bottom-right SBs below the grid corners
+  sbBottomRow: {
+    flexDirection: 'row',
+    width: SB_SIZE * 2 + SB_GAP * 2 + TILE_SIZE * BOARD_SIZE + TILE_GAP * (BOARD_SIZE - 1),
+    justifyContent: 'space-between',
+    marginTop: SB_GAP,
+  },
+  sbSpacer: {
+    flex: 1,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: TILE_GAP,
+    width: TILE_SIZE * BOARD_SIZE + TILE_GAP * (BOARD_SIZE - 1),
+  },
+  tileCell: {
+    width: TILE_SIZE,
+    height: TILE_SIZE,
     position: 'relative',
-    overflow: 'visible',
   },
-  // Grid tiles
+  // ── Tiles ─────────────────────────────────────────────────────────────
   tileWrapper: {
-    borderRadius: 6,
+    width: TILE_SIZE,
+    height: TILE_SIZE,
+    borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255,255,255,0.15)',
   },
   tileImage: {
     width: '100%',
@@ -707,86 +750,133 @@ const styles = StyleSheet.create({
     borderColor: '#4ade80',
     shadowColor: '#4ade80',
     shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 0.8,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.9,
+    shadowRadius: 8,
+    elevation: 6,
   },
   tileSelected: {
     borderWidth: 2,
     borderColor: '#22d3ee',
     shadowColor: '#22d3ee',
     shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 8,
   },
   tileHighlightOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(74, 222, 128, 0.2)',
+    backgroundColor: 'rgba(74, 222, 128, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   tileHighlightDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: 'rgba(74, 222, 128, 0.7)',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'rgba(74, 222, 128, 0.8)',
     borderWidth: 2,
     borderColor: '#fff',
   },
-  // Start Bases (outside grid)
+  // ── Start Base badges (corners) ───────────────────────────────────────
   startBaseWrapper: {
-    position: 'absolute',
-    borderRadius: 8,
+    width: SB_SIZE,
+    height: SB_SIZE,
+    borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 2,
     shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 6,
   },
   startBaseOverlay: {
     ...StyleSheet.absoluteFillObject,
+    opacity: 0.12,
   },
   startBaseLabel: {
     position: 'absolute',
-    bottom: 2,
+    bottom: 3,
     alignSelf: 'center',
-    paddingHorizontal: 6,
+    paddingHorizontal: 5,
     paddingVertical: 1,
-    borderRadius: 6,
+    borderRadius: 4,
   },
   startBaseLabelText: {
     fontSize: 8,
     fontWeight: '800',
     color: '#fff',
   },
-  // Characters
-  characterContainer: {
+  sbCharContainer: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sbCharGlow: {
     position: 'absolute',
+    top: 2,
+    left: 2,
+    right: 2,
+    bottom: 2,
+    borderRadius: 8,
+    borderWidth: 2,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.9,
+    shadowRadius: 8,
+  },
+  // ── Characters (rendered inside tile cells) ───────────────────────────
+  characterContainer: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
   },
   characterGlow: {
     position: 'absolute',
+    top: 2,
+    left: 2,
+    right: 2,
+    bottom: 2,
+    borderRadius: 8,
     borderWidth: 2,
     shadowOffset: {width: 0, height: 0},
     shadowOpacity: 0.9,
-    shadowRadius: 12,
+    shadowRadius: 10,
     elevation: 8,
   },
   playerBadge: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
-    paddingHorizontal: 5,
+    bottom: 3,
+    right: 3,
+    paddingHorizontal: 4,
     paddingVertical: 1,
-    borderRadius: 6,
+    borderRadius: 4,
   },
   playerBadgeText: {
     fontSize: 8,
     fontWeight: '800',
+    color: '#fff',
+  },
+  // Monster overlay (Glitchy on tiles)
+  monsterOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9,
+  },
+  monsterBadge: {
+    position: 'absolute',
+    top: 3,
+    right: 3,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#ef4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monsterBadgeText: {
+    fontSize: 9,
+    fontWeight: '900',
     color: '#fff',
   },
   // Bottom panel
