@@ -364,8 +364,8 @@ function GameBoard({
   const handleBoardLayout = useCallback(() => {
     if (boardReadyFiredRef.current) return;
     boardReadyFiredRef.current = true;
-    // Board layout done — wait extra 10s for Filament 3D models to fully load
-    setTimeout(() => onBoardReady(), 10000);
+    // Board layout done — wait extra 30s for Filament 3D models to fully load
+    setTimeout(() => onBoardReady(), 30000);
   }, [onBoardReady]);
   // Helper: Get rotation angle for each player's perspective
   const getPlayerRotation = (playerId: number): number => {
@@ -773,12 +773,6 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
               <ActivityIndicator size="large" color="#ff00ff" />
             </View>
             <Text style={styles.loadingTitle}>INITIALIZING ARENA</Text>
-            <Text style={styles.loadingSubtitle}>Loading 3D assets...</Text>
-            <View style={styles.loadingDots}>
-              {[0, 1, 2].map(i => (
-                <View key={i} style={[styles.loadingDot, {opacity: 0.3 + i * 0.3}]} />
-              ))}
-            </View>
           </View>
         </Animated.View>
       )}
