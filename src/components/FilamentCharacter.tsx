@@ -52,7 +52,7 @@ export default function Arena3DOverlay({characters}: Arena3DOverlayProps) {
             key={char.id}
             source={char.type === 'chip' ? chipModel : glitchyModel}
             transformToUnitCube
-            scale={[0.38, 0.38, 0.38]}
+            scale={[0.12, 0.12, 0.12]}
             translate={[toWorldX(char.col), 0, toWorldZ(char.row)]}
             multiplyWithCurrentTransform={false}
           />
