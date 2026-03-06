@@ -191,9 +191,7 @@ function AnimCharacter({character, isSelected, isCurrentPlayer, onPress}: AnimCh
       />
       <Animated.View style={animStyle}>
         {isCurrentPlayer ? (
-          <View style={styles.isoCancel}>
-            <FilamentCharacter type="chip" size={TILE_SIZE * 1.4} />
-          </View>
+          <FilamentCharacter type="chip" size={TILE_SIZE * 0.75} />
         ) : (
           <Image
             source={chipCharacter}
@@ -329,9 +327,7 @@ function StartBaseBadge({startBase, character, isCharSelected, onCharPress}: Sta
 function MonsterOverlay() {
   return (
     <View style={styles.monsterOverlay}>
-      <View style={styles.isoCancel}>
-        <FilamentCharacter type="glitchy" size={TILE_SIZE * 1.4} />
-      </View>
+      <FilamentCharacter type="glitchy" size={TILE_SIZE * 0.75} />
       <View style={styles.monsterBadge}>
         <Text style={styles.monsterBadgeText}>!</Text>
       </View>
@@ -872,11 +868,6 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 0},
     shadowOpacity: 0.9,
     shadowRadius: 8,
-  },
-  // ── ISO counter-rotation for FilamentCharacter ────────────────────────
-  // Cancels rotateX(55deg) rotateZ(45deg) so FilamentView renders upright
-  isoCancel: {
-    transform: [{rotateZ: '-45deg'}, {rotateX: '-55deg'}, {scale: 1.6}],
   },
   // ── Characters ────────────────────────────────────────────────────────
   characterContainer: {

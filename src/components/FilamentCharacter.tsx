@@ -26,9 +26,9 @@ interface FilamentCharacterProps {
 export default function FilamentCharacter({type, size}: FilamentCharacterProps) {
   const source = type === 'chip' ? chipModel : glitchyModel;
 
-  // Camera looks straight down-front at a single centered model.
-  // position (0, 2.2, 2.2) → ~45° elevation from front, model at origin.
-  const CAM: [number, number, number] = [0, 2.2, 2.2];
+  // Camera at side-elevated angle to show 3D depth through ISO CSS transform.
+  // position (2, 1.8, 1.2) → side view with elevation, compensates for rotateX(55°) rotateZ(45°)
+  const CAM: [number, number, number] = [2, 1.8, 1.2];
   const TARGET: [number, number, number] = [0, 0, 0];
   const UP: [number, number, number] = [0, 1, 0];
 
