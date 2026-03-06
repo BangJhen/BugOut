@@ -31,14 +31,22 @@ export default function Arena3DOverlay({characters}: Arena3DOverlayProps) {
   // Map board (row, col) to Filament 3D world coords.
   // Filament world: X right, Y up, Z toward viewer.
   // Board origin top-left. We center the board at origin.
-  const boardWorldSize = 2.2; // world units that fit the whole board
+  // Board world space: 4x4 tiles centered at origin.
+  // Camera at (4,4,4) → classic true-isometric angle (elevation ≈35.26°, azimuth 45°)
+  // matches CSS: perspective(800) + rotateX(55deg) + rotateZ(45deg)
+  const boardWorldSize = 2.2;
   const halfBoard = boardWorldSize / 2;
-  const cellWorld = boardWorldSize / 4; // per tile in world units
+  const cellWorld = boardWorldSize / 4; // 0.55 world units per tile
 
   const toWorldX = (col: number) =>
     -halfBoard + col * cellWorld + cellWorld / 2;
   const toWorldZ = (row: number) =>
     -halfBoard + row * cellWorld + cellWorld / 2;
+
+  // Isometric camera: equal (4,4,4) gives 35.26° elevation and 45° azimuth
+  const CAM: [number, number, number] = [4, 4, 4];
+  const TARGET: [number, number, number] = [0, 0, 0];
+  const UP: [number, number, number] = [0, 1, 0];
 
   return (
     <FilamentScene>
@@ -46,13 +54,17 @@ export default function Arena3DOverlay({characters}: Arena3DOverlayProps) {
         style={styles.view}
         pointerEvents="none">
         <DefaultLight />
-        <Camera />
+        <Camera
+          cameraPosition={CAM}
+          cameraTarget={TARGET}
+          cameraUp={UP}
+        />
         {characters.map(char => (
           <Model
             key={char.id}
             source={char.type === 'chip' ? chipModel : glitchyModel}
             transformToUnitCube
-            scale={[0.12, 0.12, 0.12]}
+            scale={[0.25, 0.25, 0.25]}
             translate={[toWorldX(char.col), 0, toWorldZ(char.row)]}
             multiplyWithCurrentTransform={false}
           />

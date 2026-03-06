@@ -489,12 +489,14 @@ function GameBoard({
               </View>
             );
           })}
-          {/* Single 3D scene — pans with boardContent so models stay on their tiles */}
-          {characterEntries.length > 0 && (
-            <Arena3DOverlay characters={characterEntries} />
-          )}
         </Animated.View>
       </View>
+
+      {/* 3D scene overlay — outside ISO CSS transform so FilamentView renders flat,
+          camera angle matches the isometric projection */}
+      {characterEntries.length > 0 && (
+        <Arena3DOverlay characters={characterEntries} />
+      )}
     </View>
   );
 }
