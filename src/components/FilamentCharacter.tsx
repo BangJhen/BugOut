@@ -40,10 +40,8 @@ export default function FilamentCharacter({
         <FilamentView style={styles.view}>
           <DefaultLight />
           <Camera />
-          {/* Model with Animator child for looping animation */}
-          <Model source={source} transformToUnitCube>
-            <Animator animationIndex={animationIndex} />
-          </Model>
+          {/* Model renders static 3D character */}
+          <Model source={source} transformToUnitCube />
         </FilamentView>
       </FilamentScene>
       {isSelected && <View style={styles.selectedRing} />}
