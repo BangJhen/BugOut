@@ -22,7 +22,7 @@ import Animated, {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Path} from 'react-native-svg';
 import {Colors} from '../constants/theme';
-import Arena3DOverlay, {CharacterEntry} from '../components/FilamentCharacter';
+import FilamentCharacter from '../components/FilamentCharacter';
 import {
   TileData,
   GameCharacter,
@@ -138,10 +138,11 @@ function DiceIcon({size = 24}: {size?: number}) {
 interface AnimCharacterProps {
   character: GameCharacter;
   isSelected: boolean;
+  isCurrentPlayer: boolean;
   onPress: () => void;
 }
 
-function AnimCharacter({character, isSelected, onPress}: AnimCharacterProps) {
+function AnimCharacter({character, isSelected, isCurrentPlayer, onPress}: AnimCharacterProps) {
   const bounceY = useSharedValue(0);
   const glowOpacity = useSharedValue(0);
   const charScale = useSharedValue(0);
@@ -188,8 +189,17 @@ function AnimCharacter({character, isSelected, onPress}: AnimCharacterProps) {
           glowStyle,
         ]}
       />
-      {/* 3D character rendered by Arena3DOverlay — show tap target + badge only */}
-      <Animated.View style={[animStyle, styles.charTapTarget]} />
+      <Animated.View style={animStyle}>
+        {isCurrentPlayer ? (
+          <FilamentCharacter type="chip" size={TILE_SIZE * 0.75} />
+        ) : (
+          <Image
+            source={chipCharacter}
+            style={styles.charTapTarget}
+            resizeMode="contain"
+          />
+        )}
+      </Animated.View>
       <View style={[styles.playerBadge, {backgroundColor: character.color}]}>
         <Text style={styles.playerBadgeText}>P{character.playerId}</Text>
       </View>
@@ -205,6 +215,7 @@ interface TileCellProps {
   isSelected: boolean;
   character: GameCharacter | null;
   isCharSelected: boolean;
+  isCurrentPlayer: boolean;
   hasMonster: boolean;
   onTilePress: () => void;
   onCharPress: () => void;
@@ -217,6 +228,7 @@ function TileCell({
   isSelected,
   character,
   isCharSelected,
+  isCurrentPlayer,
   hasMonster,
   onTilePress,
   onCharPress,
@@ -259,6 +271,7 @@ function TileCell({
         <AnimCharacter
           character={character}
           isSelected={isCharSelected}
+          isCurrentPlayer={isCurrentPlayer}
           onPress={onCharPress}
         />
       )}
@@ -312,10 +325,9 @@ function StartBaseBadge({startBase, character, isCharSelected, onCharPress}: Sta
 
 // ─── Monster Overlay ─────────────────────────────────────────────────────────
 function MonsterOverlay() {
-
   return (
     <View style={styles.monsterOverlay}>
-      {/* 3D monster rendered by Arena3DOverlay — show warning badge only */}
+      <FilamentCharacter type="glitchy" size={TILE_SIZE * 0.75} />
       <View style={styles.monsterBadge}>
         <Text style={styles.monsterBadgeText}>!</Text>
       </View>
@@ -410,20 +422,6 @@ function GameBoard({
     return m;
   }, [characters]);
 
-  // ── Build 3D character entries (on-grid only) ──────────────────────────
-  const characterEntries = useMemo<CharacterEntry[]>(() => {
-    const entries: CharacterEntry[] = [];
-    characters.forEach(c => {
-      if (!c.onStartBase) {
-        entries.push({id: c.id, type: 'chip', row: c.row, col: c.col});
-      }
-    });
-    monsters.forEach(m => {
-      entries.push({id: m.id, type: 'glitchy', row: m.row, col: m.col});
-    });
-    return entries;
-  }, [characters, monsters]);
-
   // ── Render ─────────────────────────────────────────────────────────────
   return (
     <View style={styles.viewport}>
@@ -457,6 +455,9 @@ function GameBoard({
                     character={charHere}
                     isCharSelected={
                       charHere ? selectedCharacter?.id === charHere.id : false
+                    }
+                    isCurrentPlayer={
+                      charHere?.playerId === currentPlayer
                     }
                     hasMonster={!!monsterMap[key]}
                     onTilePress={() => onTilePress(tile)}
@@ -492,11 +493,6 @@ function GameBoard({
         </Animated.View>
       </View>
 
-      {/* 3D scene overlay — outside ISO CSS transform so FilamentView renders flat,
-          camera angle matches the isometric projection */}
-      {characterEntries.length > 0 && (
-        <Arena3DOverlay characters={characterEntries} />
-      )}
     </View>
   );
 }
