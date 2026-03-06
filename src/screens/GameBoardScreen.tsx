@@ -766,7 +766,7 @@ const styles = StyleSheet.create({
     transform: [
       {perspective: 800},
       {rotateX: '45deg'},
-      {rotateZ: '135deg'},
+      {rotateZ: '225deg'},
     ],
   },
   boardContent: {
