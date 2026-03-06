@@ -19,6 +19,7 @@ import Animated, {
   withTiming,
   withSequence,
   Easing,
+  runOnJS,
 } from 'react-native-reanimated';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Path} from 'react-native-svg';
@@ -607,6 +608,7 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
   const [currentPlayer, setCurrentPlayer] = useState(1);
   const [turnCount, setTurnCount] = useState(1);
   const [isReady, setIsReady] = useState(false);
+  const loadingOpacity = useSharedValue(1);
 
   // Spawn characters + monsters on mount
   useEffect(() => {
@@ -619,10 +621,19 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
     setMonsters(spawnedMonsters);
   }, [board]);
 
-  // Wait for arena + 3D assets to initialize before showing board
+  // Wait for arena + 3D assets to fully initialize then fade out
   useEffect(() => {
-    const timer = setTimeout(() => setIsReady(true), 2500);
-    return () => clearTimeout(timer);
+    // 5s covers: Filament init + tile spawn animations (max ~1.2s) + 3D model load
+    const fadeTimer = setTimeout(() => {
+      loadingOpacity.value = withTiming(0, {duration: 600}, finished => {
+        if (finished) {
+          // Remove overlay from tree after fade completes
+          runOnJS(setIsReady)(true);
+        }
+      });
+    }, 5000);
+    return () => clearTimeout(fadeTimer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle character selection
@@ -751,7 +762,7 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
 
       {/* Loading overlay — shown while 3D assets and arena initialize */}
       {!isReady && (
-        <View style={styles.loadingOverlay}>
+        <Animated.View style={[styles.loadingOverlay, {opacity: loadingOpacity}]}>
           <View style={styles.loadingCard}>
             <View style={styles.loadingIconRing}>
               <ActivityIndicator size="large" color="#ff00ff" />
@@ -764,7 +775,7 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
               ))}
             </View>
           </View>
-        </View>
+        </Animated.View>
       )}
     </ImageBackground>
   );
