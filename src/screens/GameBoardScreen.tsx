@@ -22,7 +22,6 @@ import Animated, {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Path} from 'react-native-svg';
 import {Colors} from '../constants/theme';
-import FilamentCharacter from '../components/FilamentCharacter';
 import {
   TileData,
   GameCharacter,
@@ -46,6 +45,8 @@ const tilePath = require('../assets/images/Arena/2.png');
 const tilePortal = require('../assets/images/Arena/3.png');
 const tileStartBlue = require('../assets/images/Arena/4.png');
 const tileStartGreen = require('../assets/images/Arena/5.png');
+const chipCharacter = require('../assets/images/characters/robot_mascot.png');
+const glitchyCharacter = require('../assets/images/characters/Glitchy.png');
 
 
 // ─── Isometric board dimensions ───────────────────────────────────────────────
@@ -189,7 +190,11 @@ function AnimCharacter({character, isSelected, onPress}: AnimCharacterProps) {
         ]}
       />
       <Animated.View style={animStyle}>
-        <FilamentCharacter type="chip" size={charImgSize} isSelected={isSelected} />
+        <Image
+          source={chipCharacter}
+          style={{width: charImgSize, height: charImgSize}}
+          resizeMode="contain"
+        />
       </Animated.View>
       <View style={[styles.playerBadge, {backgroundColor: character.color}]}>
         <Text style={styles.playerBadgeText}>P{character.playerId}</Text>
@@ -297,7 +302,11 @@ function StartBaseBadge({startBase, character, isCharSelected, onCharPress}: Sta
           activeOpacity={0.8}
           onPress={onCharPress}
           style={styles.sbCharContainer}>
-          <FilamentCharacter type="chip" size={charImgSize} isSelected={isCharSelected} />
+          <Image
+            source={chipCharacter}
+            style={{width: charImgSize, height: charImgSize}}
+            resizeMode="contain"
+          />
           {isCharSelected && (
             <View style={[styles.sbCharGlow, {borderColor: color, shadowColor: color}]} />
           )}
@@ -313,7 +322,11 @@ function MonsterOverlay() {
 
   return (
     <View style={styles.monsterOverlay}>
-      <FilamentCharacter type="glitchy" size={imgSize} />
+      <Image
+        source={glitchyCharacter}
+        style={{width: imgSize, height: imgSize}}
+        resizeMode="contain"
+      />
       <View style={styles.monsterBadge}>
         <Text style={styles.monsterBadgeText}>!</Text>
       </View>
