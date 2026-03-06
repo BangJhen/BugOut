@@ -22,6 +22,7 @@ import Animated, {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Path} from 'react-native-svg';
 import {Colors} from '../constants/theme';
+import Arena3DOverlay, {CharacterEntry} from '../components/FilamentCharacter';
 import {
   TileData,
   GameCharacter,
@@ -46,7 +47,6 @@ const tilePortal = require('../assets/images/Arena/3.png');
 const tileStartBlue = require('../assets/images/Arena/4.png');
 const tileStartGreen = require('../assets/images/Arena/5.png');
 const chipCharacter = require('../assets/images/characters/robot_mascot.png');
-const glitchyCharacter = require('../assets/images/characters/Glitchy.png');
 
 
 // ─── Isometric board dimensions ───────────────────────────────────────────────
@@ -172,7 +172,6 @@ function AnimCharacter({character, isSelected, onPress}: AnimCharacterProps) {
   }));
 
   const glowStyle = useAnimatedStyle(() => ({opacity: glowOpacity.value}));
-  const charImgSize = TILE_SIZE * 0.6;
 
   return (
     <TouchableOpacity
@@ -189,13 +188,8 @@ function AnimCharacter({character, isSelected, onPress}: AnimCharacterProps) {
           glowStyle,
         ]}
       />
-      <Animated.View style={animStyle}>
-        <Image
-          source={chipCharacter}
-          style={{width: charImgSize, height: charImgSize}}
-          resizeMode="contain"
-        />
-      </Animated.View>
+      {/* 3D character rendered by Arena3DOverlay — show tap target + badge only */}
+      <Animated.View style={[animStyle, styles.charTapTarget]} />
       <View style={[styles.playerBadge, {backgroundColor: character.color}]}>
         <Text style={styles.playerBadgeText}>P{character.playerId}</Text>
       </View>
@@ -318,15 +312,10 @@ function StartBaseBadge({startBase, character, isCharSelected, onCharPress}: Sta
 
 // ─── Monster Overlay ─────────────────────────────────────────────────────────
 function MonsterOverlay() {
-  const imgSize = TILE_SIZE * 0.65;
 
   return (
     <View style={styles.monsterOverlay}>
-      <Image
-        source={glitchyCharacter}
-        style={{width: imgSize, height: imgSize}}
-        resizeMode="contain"
-      />
+      {/* 3D monster rendered by Arena3DOverlay — show warning badge only */}
       <View style={styles.monsterBadge}>
         <Text style={styles.monsterBadgeText}>!</Text>
       </View>
@@ -421,6 +410,20 @@ function GameBoard({
     return m;
   }, [characters]);
 
+  // ── Build 3D character entries (on-grid only) ──────────────────────────
+  const characterEntries = useMemo<CharacterEntry[]>(() => {
+    const entries: CharacterEntry[] = [];
+    characters.forEach(c => {
+      if (!c.onStartBase) {
+        entries.push({id: c.id, type: 'chip', row: c.row, col: c.col});
+      }
+    });
+    monsters.forEach(m => {
+      entries.push({id: m.id, type: 'glitchy', row: m.row, col: m.col});
+    });
+    return entries;
+  }, [characters, monsters]);
+
   // ── Render ─────────────────────────────────────────────────────────────
   return (
     <View style={styles.viewport}>
@@ -488,6 +491,11 @@ function GameBoard({
           })}
         </Animated.View>
       </View>
+
+      {/* Single 3D scene — all on-grid characters + monsters rendered in one FilamentView */}
+      {characterEntries.length > 0 && (
+        <Arena3DOverlay characters={characterEntries} />
+      )}
     </View>
   );
 }
@@ -841,6 +849,11 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: '800',
     color: '#fff',
+  },
+  charTapTarget: {
+    width: TILE_SIZE * 0.6,
+    height: TILE_SIZE * 0.6,
+    borderRadius: 999,
   },
   sbCharContainer: {
     ...StyleSheet.absoluteFillObject,

@@ -1,12 +1,11 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {StyleSheet} from 'react-native';
 import {
   FilamentScene,
   FilamentView,
   DefaultLight,
   Model,
   Camera,
-  Animator,
 } from 'react-native-filament';
 
 // ─── Asset requires ────────────────────────────────────────────────────────────
@@ -14,54 +13,58 @@ const chipModel = require('../assets/models/chip_character.glb');
 const glitchyModel = require('../assets/models/glitchy_character.glb');
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-export type FilamentCharacterType = 'chip' | 'glitchy';
-
-interface FilamentCharacterProps {
-  type: FilamentCharacterType;
-  // size in pixels for the 3D view container
-  size?: number;
-  isSelected?: boolean;
-  // animation index to play (0 = first/idle by default)
-  animationIndex?: number;
+export interface CharacterEntry {
+  id: string;
+  type: 'chip' | 'glitchy';
+  // board-space position (row, col) — converted to 3D world coords internally
+  row: number;
+  col: number;
 }
 
-// ─── Public component ──────────────────────────────────────────────────────────
-export default function FilamentCharacter({
-  type,
-  size = 80,
-  isSelected = false,
-  animationIndex = 0,
-}: FilamentCharacterProps) {
-  const source = type === 'chip' ? chipModel : glitchyModel;
+interface Arena3DOverlayProps {
+  characters: CharacterEntry[];
+}
+
+// ─── Single-scene overlay for all 3D characters ────────────────────────────────
+// All models share ONE FilamentScene → no per-tile overhead
+export default function Arena3DOverlay({characters}: Arena3DOverlayProps) {
+  // Map board (row, col) to Filament 3D world coords.
+  // Filament world: X right, Y up, Z toward viewer.
+  // Board origin top-left. We center the board at origin.
+  const boardWorldSize = 2.2; // world units that fit the whole board
+  const halfBoard = boardWorldSize / 2;
+  const cellWorld = boardWorldSize / 4; // per tile in world units
+
+  const toWorldX = (col: number) =>
+    -halfBoard + col * cellWorld + cellWorld / 2;
+  const toWorldZ = (row: number) =>
+    -halfBoard + row * cellWorld + cellWorld / 2;
 
   return (
-    <View style={[styles.container, {width: size, height: size}]}>
-      <FilamentScene>
-        <FilamentView style={styles.view}>
-          <DefaultLight />
-          <Camera />
-          {/* Model renders static 3D character */}
-          <Model source={source} transformToUnitCube />
-        </FilamentView>
-      </FilamentScene>
-      {isSelected && <View style={styles.selectedRing} />}
-    </View>
+    <FilamentScene>
+      <FilamentView
+        style={styles.view}
+        pointerEvents="none">
+        <DefaultLight />
+        <Camera />
+        {characters.map(char => (
+          <Model
+            key={char.id}
+            source={char.type === 'chip' ? chipModel : glitchyModel}
+            transformToUnitCube
+            scale={[0.38, 0.38, 0.38]}
+            translate={[toWorldX(char.col), 0, toWorldZ(char.row)]}
+            multiplyWithCurrentTransform={false}
+          />
+        ))}
+      </FilamentView>
+    </FilamentScene>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    position: 'relative',
-  },
   view: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  selectedRing: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: '#00f2ff',
-    pointerEvents: 'none',
+    backgroundColor: 'transparent',
   },
 });
