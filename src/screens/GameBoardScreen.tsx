@@ -9,6 +9,7 @@ import {
   StatusBar,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -605,6 +606,7 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
   const [validMoves, setValidMoves] = useState<TileData[]>([]);
   const [currentPlayer, setCurrentPlayer] = useState(1);
   const [turnCount, setTurnCount] = useState(1);
+  const [isReady, setIsReady] = useState(false);
 
   // Spawn characters + monsters on mount
   useEffect(() => {
@@ -616,6 +618,12 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
     const spawnedMonsters = spawnMonsters(board);
     setMonsters(spawnedMonsters);
   }, [board]);
+
+  // Wait for arena + 3D assets to initialize before showing board
+  useEffect(() => {
+    const timer = setTimeout(() => setIsReady(true), 2500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Handle character selection
   const handleCharacterPress = useCallback(
@@ -740,6 +748,24 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
           onEndTurn={handleEndTurn}
         />
       </View>
+
+      {/* Loading overlay — shown while 3D assets and arena initialize */}
+      {!isReady && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingCard}>
+            <View style={styles.loadingIconRing}>
+              <ActivityIndicator size="large" color="#ff00ff" />
+            </View>
+            <Text style={styles.loadingTitle}>INITIALIZING ARENA</Text>
+            <Text style={styles.loadingSubtitle}>Loading 3D assets...</Text>
+            <View style={styles.loadingDots}>
+              {[0, 1, 2].map(i => (
+                <View key={i} style={[styles.loadingDot, {opacity: 0.3 + i * 0.3}]} />
+              ))}
+            </View>
+          </View>
+        </View>
+      )}
     </ImageBackground>
   );
 }
@@ -1005,6 +1031,54 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: 'rgba(255,255,255,0.6)',
+  },
+  // ── Loading overlay ───────────────────────────────────────────────────
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(8, 4, 20, 0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 999,
+  },
+  loadingCard: {
+    alignItems: 'center',
+    gap: 16,
+    paddingHorizontal: 40,
+  },
+  loadingIconRing: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: '#ff00ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 0, 255, 0.08)',
+    marginBottom: 8,
+  },
+  loadingTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: 4,
+    textAlign: 'center',
+  },
+  loadingSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.5)',
+    letterSpacing: 1,
+  },
+  loadingDots: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  loadingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ff00ff',
   },
   diceButton: {
     flexDirection: 'row',
