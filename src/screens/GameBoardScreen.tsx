@@ -356,10 +356,21 @@ function GameBoard({
   onTilePress,
   onCharacterPress,
 }: GameBoardProps) {
+  // Helper: Get rotation angle for each player's perspective
+  const getPlayerRotation = (playerId: number): number => {
+    switch (playerId) {
+      case 1: return 275; // Top-left start base at front
+      case 2: return 185; // Bottom-right start base at front
+      case 3: return 95;  // Bottom-left start base at front
+      case 4: return 5;   // Top-right start base at front
+      default: return 275;
+    }
+  };
+
   // ── Camera follow ──────────────────────────────────────────────────────
   const camX = useSharedValue(0);
   const camY = useSharedValue(0);
-  const boardRotation = useSharedValue(currentPlayer === 1 ? 275 : 75);
+  const boardRotation = useSharedValue(getPlayerRotation(currentPlayer));
 
   // Pan camera to a board position (row, col)
   const panCameraTo = useCallback(
@@ -379,7 +390,7 @@ function GameBoard({
     if (!char) return;
     panCameraTo(char.row, char.col);
     // Rotate board to player's perspective
-    boardRotation.value = withSpring(currentPlayer === 1 ? 275 : 75, {
+    boardRotation.value = withSpring(getPlayerRotation(currentPlayer), {
       damping: 20,
       stiffness: 80,
     });
