@@ -765,7 +765,7 @@ const styles = StyleSheet.create({
   isoProjection: {
     transform: [
       {perspective: 800},
-      {rotateX: '55deg'},
+      {rotateX: '45deg'},
       {rotateZ: '45deg'},
     ],
   },
