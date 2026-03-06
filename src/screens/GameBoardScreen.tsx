@@ -359,6 +359,7 @@ function GameBoard({
   // ── Camera follow ──────────────────────────────────────────────────────
   const camX = useSharedValue(0);
   const camY = useSharedValue(0);
+  const boardRotation = useSharedValue(currentPlayer === 1 ? 275 : 75);
 
   // Pan camera to a board position (row, col)
   const panCameraTo = useCallback(
@@ -377,10 +378,23 @@ function GameBoard({
     const char = characters.find(c => c.playerId === currentPlayer);
     if (!char) return;
     panCameraTo(char.row, char.col);
-  }, [currentPlayer, characters, panCameraTo]);
+    // Rotate board to player's perspective
+    boardRotation.value = withSpring(currentPlayer === 1 ? 275 : 75, {
+      damping: 20,
+      stiffness: 80,
+    });
+  }, [currentPlayer, characters, panCameraTo, boardRotation]);
 
   const cameraStyle = useAnimatedStyle(() => ({
     transform: [{translateX: camX.value}, {translateY: camY.value}],
+  }));
+
+  const rotationStyle = useAnimatedStyle(() => ({
+    transform: [
+      {perspective: 800},
+      {rotateX: '45deg'},
+      {rotateZ: `${boardRotation.value}deg`},
+    ],
   }));
 
   // ── Lookups ────────────────────────────────────────────────────────────
@@ -444,8 +458,8 @@ function GameBoard({
   // ── Render ─────────────────────────────────────────────────────────────
   return (
     <View style={styles.viewport}>
-      {/* Isometric projection wrapper */}
-      <View style={styles.isoProjection}>
+      {/* Isometric projection wrapper - rotates based on current player */}
+      <Animated.View style={rotationStyle}>
         {/* Camera pan (animated in board-space, before iso rotation) */}
         <Animated.View style={[styles.boardContent, cameraStyle]}>
           {/* Grid tiles — absolutely positioned */}
@@ -513,7 +527,7 @@ function GameBoard({
             <Character3DOverlay characters={character3DEntries} />
           )}
         </Animated.View>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -761,13 +775,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  isoProjection: {
-    transform: [
-      {perspective: 800},
-      {rotateX: '45deg'},
-      {rotateZ: '225deg'},
-    ],
   },
   boardContent: {
     width: BOARD_PX,
