@@ -6,7 +6,6 @@ import {
   DefaultLight,
   Model,
   Camera,
-  Animator,
 } from 'react-native-filament';
 
 // ─── Asset requires ────────────────────────────────────────────────────────────
@@ -18,50 +17,48 @@ export type FilamentCharacterType = 'chip' | 'glitchy';
 
 interface FilamentCharacterProps {
   type: FilamentCharacterType;
-  // size in pixels for the 3D view container
-  size?: number;
-  isSelected?: boolean;
-  // animation index to play (0 = first/idle by default)
-  animationIndex?: number;
+  // size of the rendered 3D view in pixels (should match tile size)
+  size: number;
 }
 
-// ─── Public component ──────────────────────────────────────────────────────────
-export default function FilamentCharacter({
-  type,
-  size = 80,
-  isSelected = false,
-  animationIndex = 0,
-}: FilamentCharacterProps) {
+// ─── Per-tile 3D character (1 FilamentScene per instance) ─────────────────────
+// Only mount this for currentPlayer's on-grid char + monster → max 2 instances
+export default function FilamentCharacter({type, size}: FilamentCharacterProps) {
   const source = type === 'chip' ? chipModel : glitchyModel;
+
+  // Camera positioned behind and above character for rear view
+  // This allows better view of the arena ahead of the character
+  const CAM: [number, number, number] = [0, 2, -2];
+  const TARGET: [number, number, number] = [0, 0, 0];
+  const UP: [number, number, number] = [0, 1, 0];
 
   return (
     <View style={[styles.container, {width: size, height: size}]}>
       <FilamentScene>
-        <FilamentView style={styles.view}>
+        <FilamentView style={styles.view} pointerEvents="none">
           <DefaultLight />
-          <Camera />
-          {/* Model renders static 3D character */}
-          <Model source={source} transformToUnitCube />
+          <Camera
+            cameraPosition={CAM}
+            cameraTarget={TARGET}
+            cameraUp={UP}
+          />
+          <Model
+            source={source}
+            transformToUnitCube
+            multiplyWithCurrentTransform={false}
+          />
         </FilamentView>
       </FilamentScene>
-      {isSelected && <View style={styles.selectedRing} />}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
+    overflow: 'hidden',
   },
   view: {
     flex: 1,
     backgroundColor: 'transparent',
-  },
-  selectedRing: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: '#00f2ff',
-    pointerEvents: 'none',
   },
 });

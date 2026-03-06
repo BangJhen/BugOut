@@ -9,6 +9,7 @@ import {
   StatusBar,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -18,11 +19,12 @@ import Animated, {
   withTiming,
   withSequence,
   Easing,
+  runOnJS,
 } from 'react-native-reanimated';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Path} from 'react-native-svg';
 import {Colors} from '../constants/theme';
-import FilamentCharacter from '../components/FilamentCharacter';
+import Character3DOverlay, {Character3DEntry} from '../components/Character3DOverlay';
 import {
   TileData,
   GameCharacter,
@@ -46,17 +48,20 @@ const tilePath = require('../assets/images/Arena/2.png');
 const tilePortal = require('../assets/images/Arena/3.png');
 const tileStartBlue = require('../assets/images/Arena/4.png');
 const tileStartGreen = require('../assets/images/Arena/5.png');
+const chipCharacter = require('../assets/images/characters/robot_mascot.png');
 
 
-// ─── Board dimensions ─────────────────────────────────────────────────────────
-// SB_SIZE must account for space on left/right of grid
-// Total width = SB_SIZE + GAP + GRID + GAP + SB_SIZE = SCREEN_WIDTH - outer padding
-const OUTER_PAD = 12;
-const TILE_GAP = 3;
-const SB_GAP = 6;
-const SB_SIZE = 56;
-const GRID_W = SCREEN_WIDTH - OUTER_PAD * 2 - SB_SIZE * 2 - SB_GAP * 2;
-const TILE_SIZE = Math.floor((GRID_W - TILE_GAP * (BOARD_SIZE - 1)) / BOARD_SIZE);
+// ─── Isometric board dimensions ───────────────────────────────────────────────
+const TILE_SIZE = 72;
+const TILE_GAP = 4;
+const TILE_DEPTH = 8; // pseudo-3D tile thickness
+const SB_SIZE = 50;
+const SB_GAP = 8;
+const STRIDE = TILE_SIZE + TILE_GAP; // 76
+const BOARD_PX = STRIDE * BOARD_SIZE - TILE_GAP; // 300
+
+// Viewport area for the isometric board
+const VIEWPORT_SIZE = SCREEN_WIDTH - 24;
 
 // Map tile type to image
 function getTileImage(tile: TileData) {
@@ -77,6 +82,21 @@ function getStartBaseImage(owner: number) {
   // We have blue (4.png) and green (5.png)
   // Reuse blue for P1 & P3, green for P2 & P4
   return owner === 2 || owner === 4 ? tileStartGreen : tileStartBlue;
+}
+
+// Position start base outside the isometric grid
+function getStartBasePosition(sb: StartBase): {left: number; top: number} {
+  const tileCenter = (TILE_SIZE - SB_SIZE) / 2;
+  switch (sb.position) {
+    case 'bottom-left':
+      return {left: -SB_SIZE - SB_GAP, top: sb.entryRow * STRIDE + tileCenter};
+    case 'bottom-right':
+      return {left: BOARD_PX + SB_GAP, top: sb.entryRow * STRIDE + tileCenter};
+    case 'top-left':
+      return {left: sb.entryCol * STRIDE + tileCenter, top: -SB_SIZE - SB_GAP};
+    case 'top-right':
+      return {left: sb.entryCol * STRIDE + tileCenter, top: -SB_SIZE - SB_GAP};
+  }
 }
 
 
@@ -120,10 +140,11 @@ function DiceIcon({size = 24}: {size?: number}) {
 interface AnimCharacterProps {
   character: GameCharacter;
   isSelected: boolean;
+  isCurrentPlayer: boolean;
   onPress: () => void;
 }
 
-function AnimCharacter({character, isSelected, onPress}: AnimCharacterProps) {
+function AnimCharacter({character, isSelected, isCurrentPlayer, onPress}: AnimCharacterProps) {
   const bounceY = useSharedValue(0);
   const glowOpacity = useSharedValue(0);
   const charScale = useSharedValue(0);
@@ -154,7 +175,6 @@ function AnimCharacter({character, isSelected, onPress}: AnimCharacterProps) {
   }));
 
   const glowStyle = useAnimatedStyle(() => ({opacity: glowOpacity.value}));
-  const charImgSize = TILE_SIZE * 0.6;
 
   return (
     <TouchableOpacity
@@ -171,9 +191,15 @@ function AnimCharacter({character, isSelected, onPress}: AnimCharacterProps) {
           glowStyle,
         ]}
       />
-      <Animated.View style={animStyle}>
-        <FilamentCharacter type="chip" size={charImgSize} isSelected={isSelected} />
-      </Animated.View>
+      {!isCurrentPlayer && (
+        <Animated.View style={animStyle}>
+          <Image
+            source={chipCharacter}
+            style={styles.charTapTarget}
+            resizeMode="contain"
+          />
+        </Animated.View>
+      )}
       <View style={[styles.playerBadge, {backgroundColor: character.color}]}>
         <Text style={styles.playerBadgeText}>P{character.playerId}</Text>
       </View>
@@ -189,6 +215,7 @@ interface TileCellProps {
   isSelected: boolean;
   character: GameCharacter | null;
   isCharSelected: boolean;
+  currentPlayer: number;
   hasMonster: boolean;
   onTilePress: () => void;
   onCharPress: () => void;
@@ -201,6 +228,7 @@ function TileCell({
   isSelected,
   character,
   isCharSelected,
+  currentPlayer,
   hasMonster,
   onTilePress,
   onCharPress,
@@ -222,6 +250,8 @@ function TileCell({
 
   return (
     <Animated.View style={[styles.tileCell, animStyle]}>
+      {/* 3D depth strip (south face visible in isometric) */}
+      <View style={styles.tileDepth} />
       <TouchableOpacity
         activeOpacity={0.7}
         onPress={onTilePress}
@@ -241,6 +271,7 @@ function TileCell({
         <AnimCharacter
           character={character}
           isSelected={isCharSelected}
+          isCurrentPlayer={character.playerId === currentPlayer}
           onPress={onCharPress}
         />
       )}
@@ -278,7 +309,11 @@ function StartBaseBadge({startBase, character, isCharSelected, onCharPress}: Sta
           activeOpacity={0.8}
           onPress={onCharPress}
           style={styles.sbCharContainer}>
-          <FilamentCharacter type="chip" size={charImgSize} isSelected={isCharSelected} />
+          <Image
+            source={chipCharacter}
+            style={{width: charImgSize, height: charImgSize}}
+            resizeMode="contain"
+          />
           {isCharSelected && (
             <View style={[styles.sbCharGlow, {borderColor: color, shadowColor: color}]} />
           )}
@@ -290,11 +325,8 @@ function StartBaseBadge({startBase, character, isCharSelected, onCharPress}: Sta
 
 // ─── Monster Overlay ─────────────────────────────────────────────────────────
 function MonsterOverlay() {
-  const imgSize = TILE_SIZE * 0.65;
-
   return (
     <View style={styles.monsterOverlay}>
-      <FilamentCharacter type="glitchy" size={imgSize} />
       <View style={styles.monsterBadge}>
         <Text style={styles.monsterBadgeText}>!</Text>
       </View>
@@ -302,7 +334,7 @@ function MonsterOverlay() {
   );
 }
 
-// ─── Game Board ───────────────────────────────────────────────────────────────
+// ─── Game Board (Isometric + Camera Follow) ─────────────────────────────────
 interface GameBoardProps {
   board: TileData[][];
   characters: GameCharacter[];
@@ -310,8 +342,10 @@ interface GameBoardProps {
   selectedCharacter: GameCharacter | null;
   validMoves: TileData[];
   squadSize: number;
+  currentPlayer: number;
   onTilePress: (tile: TileData) => void;
   onCharacterPress: (character: GameCharacter) => void;
+  onBoardReady: () => void;
 }
 
 function GameBoard({
@@ -321,9 +355,71 @@ function GameBoard({
   selectedCharacter,
   validMoves,
   squadSize,
+  currentPlayer,
   onTilePress,
   onCharacterPress,
+  onBoardReady,
 }: GameBoardProps) {
+  const boardReadyFiredRef = React.useRef(false);
+  const handleBoardLayout = useCallback(() => {
+    if (boardReadyFiredRef.current) return;
+    boardReadyFiredRef.current = true;
+    // Board layout done — wait extra 30s for Filament 3D models to fully load
+    setTimeout(() => onBoardReady(), 30000);
+  }, [onBoardReady]);
+  // Helper: Get rotation angle for each player's perspective
+  const getPlayerRotation = (playerId: number): number => {
+    switch (playerId) {
+      case 1: return 275; // Top-left start base at front
+      case 2: return 75; // Bottom-right start base at front
+      case 3: return 200;  // Bottom-left start base at front
+      case 4: return 160;   // Top-right start base at front
+      default: return 275;
+    }
+  };
+
+  // ── Camera follow ──────────────────────────────────────────────────────
+  const camX = useSharedValue(0);
+  const camY = useSharedValue(0);
+  const boardRotation = useSharedValue(getPlayerRotation(currentPlayer));
+
+  // Pan camera to a board position (row, col)
+  const panCameraTo = useCallback(
+    (row: number, col: number) => {
+      const boardCenter = BOARD_PX / 2;
+      const targetX = col * STRIDE + TILE_SIZE / 2;
+      const targetY = row * STRIDE + TILE_SIZE / 2;
+      camX.value = withSpring(boardCenter - targetX, {damping: 18, stiffness: 90});
+      camY.value = withSpring(boardCenter - targetY, {damping: 18, stiffness: 90});
+    },
+    [camX, camY],
+  );
+
+  // Pan to current player's character on turn change
+  useEffect(() => {
+    const char = characters.find(c => c.playerId === currentPlayer);
+    if (!char) return;
+    panCameraTo(char.row, char.col);
+    // Rotate board to player's perspective
+    boardRotation.value = withSpring(getPlayerRotation(currentPlayer), {
+      damping: 20,
+      stiffness: 80,
+    });
+  }, [currentPlayer, characters, panCameraTo, boardRotation]);
+
+  const cameraStyle = useAnimatedStyle(() => ({
+    transform: [{translateX: camX.value}, {translateY: camY.value}],
+  }));
+
+  const rotationStyle = useAnimatedStyle(() => ({
+    transform: [
+      {perspective: 800},
+      {rotateX: '45deg'},
+      {rotateZ: `${boardRotation.value}deg`},
+    ],
+  }));
+
+  // ── Lookups ────────────────────────────────────────────────────────────
   const validMoveIds = useMemo(
     () => new Set(validMoves.map(t => t.id)),
     [validMoves],
@@ -331,7 +427,6 @@ function GameBoard({
 
   const activeStartBases = START_BASES.filter(sb => sb.owner <= squadSize);
 
-  // Build a lookup: 'row-col' → character (only on-grid characters)
   const charMap = useMemo(() => {
     const m: Record<string, GameCharacter> = {};
     characters.forEach(c => {
@@ -342,14 +437,14 @@ function GameBoard({
     return m;
   }, [characters]);
 
-  // Monster lookup: 'row-col' → true
   const monsterMap = useMemo(() => {
     const m: Record<string, boolean> = {};
-    monsters.forEach(mon => { m[`${mon.row}-${mon.col}`] = true; });
+    monsters.forEach(mon => {
+      m[`${mon.row}-${mon.col}`] = true;
+    });
     return m;
   }, [monsters]);
 
-  // Start base lookup: owner → character (only on-start-base characters)
   const sbCharMap = useMemo(() => {
     const m: Record<number, GameCharacter> = {};
     characters.forEach(c => {
@@ -360,66 +455,101 @@ function GameBoard({
     return m;
   }, [characters]);
 
-  // Helper to render a SB or empty placeholder
-  const renderSB = (pos: StartBase['position']) => {
-    const sb = activeStartBases.find(s => s.position === pos);
-    if (!sb) return <View style={{width: SB_SIZE, height: SB_SIZE}} />;
-    const c = sbCharMap[sb.owner] ?? null;
-    return (
-      <StartBaseBadge
-        startBase={sb}
-        character={c}
-        isCharSelected={c !== null && selectedCharacter?.id === c.id}
-        onCharPress={() => { if (c) {onCharacterPress(c);} }}
-      />
+  // ── Build 3D character entries (currentPlayer on-grid + monster) ──────
+  const character3DEntries = useMemo<Character3DEntry[]>(() => {
+    const entries: Character3DEntry[] = [];
+    // Only render 3D for current player's on-grid character
+    const currentChar = characters.find(
+      c => c.playerId === currentPlayer && !c.onStartBase,
     );
-  };
+    if (currentChar) {
+      entries.push({
+        id: currentChar.id,
+        type: 'chip',
+        row: currentChar.row,
+        col: currentChar.col,
+      });
+    }
+    // Render 3D for monster
+    monsters.forEach(m => {
+      entries.push({id: m.id, type: 'glitchy', row: m.row, col: m.col});
+    });
+    return entries;
+  }, [characters, monsters, currentPlayer]);
 
-  const gridSize = TILE_SIZE * BOARD_SIZE + TILE_GAP * (BOARD_SIZE - 1);
-
+  // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <View style={styles.boardOuter}>
-      {/* Row 1: top-left SB above col-0, top-right SB above col-3 */}
-      <View style={[styles.sbTopRow, {width: gridSize}]}>
-        {renderSB('top-left')}
-        {renderSB('top-right')}
-      </View>
+    <View style={styles.viewport}>
+      {/* Isometric projection wrapper - rotates based on current player */}
+      <Animated.View style={rotationStyle}>
+        {/* Camera pan (animated in board-space, before iso rotation) */}
+        <Animated.View style={[styles.boardContent, cameraStyle]} onLayout={handleBoardLayout}>
+          {/* Grid tiles — absolutely positioned */}
+          {board.map((row, rowIdx) =>
+            row.map((tile, colIdx) => {
+              const key = `${rowIdx}-${colIdx}`;
+              const isHighlighted = validMoveIds.has(tile.id);
+              const charHere = charMap[key] ?? null;
+              const isGridSelected =
+                selectedCharacter?.row === rowIdx &&
+                selectedCharacter?.col === colIdx &&
+                !selectedCharacter?.onStartBase;
+              const delay = (rowIdx * BOARD_SIZE + colIdx) * 50;
+              return (
+                <View
+                  key={tile.id}
+                  style={{
+                    position: 'absolute',
+                    left: colIdx * STRIDE,
+                    top: rowIdx * STRIDE,
+                  }}>
+                  <TileCell
+                    tile={tile}
+                    isHighlighted={isHighlighted}
+                    isSelected={isGridSelected}
+                    character={charHere}
+                    isCharSelected={
+                      charHere ? selectedCharacter?.id === charHere.id : false
+                    }
+                    currentPlayer={currentPlayer}
+                    hasMonster={!!monsterMap[key]}
+                    onTilePress={() => onTilePress(tile)}
+                    onCharPress={() => charHere && onCharacterPress(charHere)}
+                    delay={delay}
+                  />
+                </View>
+              );
+            }),
+          )}
 
-      {/* Row 2: 4×4 grid only */}
-      <View style={[styles.grid, {width: gridSize, height: gridSize}]}>
-        {board.map((row, rowIdx) =>
-          row.map((tile, colIdx) => {
-            const key = `${rowIdx}-${colIdx}`;
-            const isHighlighted = validMoveIds.has(tile.id);
-            const charHere = charMap[key] ?? null;
-            const isGridSelected =
-              selectedCharacter?.row === rowIdx &&
-              selectedCharacter?.col === colIdx &&
-              !selectedCharacter?.onStartBase;
-            const delay = (rowIdx * BOARD_SIZE + colIdx) * 50;
+          {/* Start bases — absolutely positioned outside the grid */}
+          {activeStartBases.map(sb => {
+            const pos = getStartBasePosition(sb);
+            const c = sbCharMap[sb.owner] ?? null;
             return (
-              <TileCell
-                key={tile.id}
-                tile={tile}
-                isHighlighted={isHighlighted}
-                isSelected={isGridSelected}
-                character={charHere}
-                isCharSelected={charHere ? selectedCharacter?.id === charHere.id : false}
-                hasMonster={!!monsterMap[key]}
-                onTilePress={() => onTilePress(tile)}
-                onCharPress={() => charHere && onCharacterPress(charHere)}
-                delay={delay}
-              />
+              <View
+                key={sb.id}
+                style={{position: 'absolute', left: pos.left, top: pos.top}}>
+                <StartBaseBadge
+                  startBase={sb}
+                  character={c}
+                  isCharSelected={c !== null && selectedCharacter?.id === c.id}
+                  onCharPress={() => {
+                    if (c) {
+                      onCharacterPress(c);
+                    }
+                  }}
+                />
+              </View>
             );
-          }),
-        )}
-      </View>
+          })}
 
-      {/* Row 3: bottom-left SB below col-0, bottom-right SB below col-3 */}
-      <View style={[styles.sbBottomRow, {width: gridSize}]}>
-        {renderSB('bottom-left')}
-        {renderSB('bottom-right')}
-      </View>
+          {/* 3D character overlay — inside ISO transform for automatic positioning */}
+          {character3DEntries.length > 0 && (
+            <Character3DOverlay characters={character3DEntries} />
+          )}
+        </Animated.View>
+      </Animated.View>
     </View>
   );
 }
@@ -486,6 +616,8 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
   const [validMoves, setValidMoves] = useState<TileData[]>([]);
   const [currentPlayer, setCurrentPlayer] = useState(1);
   const [turnCount, setTurnCount] = useState(1);
+  const [isReady, setIsReady] = useState(false);
+  const loadingOpacity = useSharedValue(1);
 
   // Spawn characters + monsters on mount
   useEffect(() => {
@@ -497,6 +629,16 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
     const spawnedMonsters = spawnMonsters(board);
     setMonsters(spawnedMonsters);
   }, [board]);
+
+  const handleBoardReady = useCallback(() => {
+    // Board has laid out + Filament has had time to init — fade out overlay
+    loadingOpacity.value = withTiming(0, {duration: 600}, finished => {
+      if (finished) {
+        runOnJS(setIsReady)(true);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle character selection
   const handleCharacterPress = useCallback(
@@ -606,8 +748,10 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
           selectedCharacter={selectedCharacter}
           validMoves={validMoves}
           squadSize={squadSize}
+          currentPlayer={currentPlayer}
           onTilePress={handleTilePress}
           onCharacterPress={handleCharacterPress}
+          onBoardReady={handleBoardReady}
         />
       </View>
 
@@ -620,6 +764,18 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
           onEndTurn={handleEndTurn}
         />
       </View>
+
+      {/* Loading overlay — shown while 3D assets and arena initialize */}
+      {!isReady && (
+        <Animated.View style={[styles.loadingOverlay, {opacity: loadingOpacity}]}>
+          <View style={styles.loadingCard}>
+            <View style={styles.loadingIconRing}>
+              <ActivityIndicator size="large" color="#ff00ff" />
+            </View>
+            <Text style={styles.loadingTitle}>INITIALIZING ARENA</Text>
+          </View>
+        </Animated.View>
+      )}
     </ImageBackground>
   );
 }
@@ -658,55 +814,48 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: OUTER_PAD,
   },
-  // ── Flat grid layout ──────────────────────────────────────────────────
-  boardOuter: {
+  // ── Isometric layout ──────────────────────────────────────────────────
+  viewport: {
+    width: VIEWPORT_SIZE,
+    height: VIEWPORT_SIZE,
+    overflow: 'hidden',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 40,
   },
-  // top row holds top-left/top-right SBs above the grid corners
-  sbTopRow: {
-    flexDirection: 'row',
-    // width = SB + gap + grid + gap + SB
-    width: SB_SIZE * 2 + SB_GAP * 2 + TILE_SIZE * BOARD_SIZE + TILE_GAP * (BOARD_SIZE - 1),
-    justifyContent: 'space-between',
-    marginBottom: SB_GAP,
+  boardContent: {
+    width: BOARD_PX,
+    height: BOARD_PX,
   },
-  // mid row holds left SB, grid, right SB — all vertically centered
-  sbMidRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SB_GAP,
-  },
-  // bottom row holds bottom-left/bottom-right SBs below the grid corners
-  sbBottomRow: {
-    flexDirection: 'row',
-    width: SB_SIZE * 2 + SB_GAP * 2 + TILE_SIZE * BOARD_SIZE + TILE_GAP * (BOARD_SIZE - 1),
-    justifyContent: 'space-between',
-    marginTop: SB_GAP,
-  },
-  sbSpacer: {
-    flex: 1,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: TILE_GAP,
-    width: TILE_SIZE * BOARD_SIZE + TILE_GAP * (BOARD_SIZE - 1),
-  },
+  // ── Tiles ─────────────────────────────────────────────────────────────
   tileCell: {
     width: TILE_SIZE,
     height: TILE_SIZE,
     position: 'relative',
   },
-  // ── Tiles ─────────────────────────────────────────────────────────────
+  tileDepth: {
+    position: 'absolute',
+    bottom: -TILE_DEPTH,
+    left: 0,
+    right: 0,
+    height: TILE_DEPTH,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
+  },
   tileWrapper: {
     width: TILE_SIZE,
     height: TILE_SIZE,
     borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    borderColor: 'rgba(255,255,255,0.2)',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 8,
   },
   tileImage: {
     width: '100%',
@@ -718,8 +867,8 @@ const styles = StyleSheet.create({
     shadowColor: '#4ade80',
     shadowOffset: {width: 0, height: 0},
     shadowOpacity: 0.9,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowRadius: 12,
+    elevation: 10,
   },
   tileSelected: {
     borderWidth: 2,
@@ -727,8 +876,8 @@ const styles = StyleSheet.create({
     shadowColor: '#22d3ee',
     shadowOffset: {width: 0, height: 0},
     shadowOpacity: 0.9,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowRadius: 14,
+    elevation: 12,
   },
   tileHighlightOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -737,21 +886,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tileHighlightDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: 'rgba(74, 222, 128, 0.8)',
     borderWidth: 2,
     borderColor: '#fff',
   },
-  // ── Start Base badges (corners) ───────────────────────────────────────
+  // ── Start Base badges ─────────────────────────────────────────────────
   startBaseWrapper: {
     width: SB_SIZE,
     height: SB_SIZE,
     borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 2,
-    shadowOffset: {width: 0, height: 0},
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.6,
     shadowRadius: 8,
     elevation: 6,
@@ -773,6 +923,11 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#fff',
   },
+  charTapTarget: {
+    width: TILE_SIZE * 0.6,
+    height: TILE_SIZE * 0.6,
+    borderRadius: 999,
+  },
   sbCharContainer: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
@@ -790,7 +945,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.9,
     shadowRadius: 8,
   },
-  // ── Characters (rendered inside tile cells) ───────────────────────────
+  // ── Characters ────────────────────────────────────────────────────────
   characterContainer: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
@@ -823,7 +978,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#fff',
   },
-  // Monster overlay (Glitchy on tiles)
+  // ── Monster ───────────────────────────────────────────────────────────
   monsterOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
@@ -846,7 +1001,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#fff',
   },
-  // Bottom panel
+  // ── Bottom panel ──────────────────────────────────────────────────────
   bottomPanel: {
     paddingHorizontal: 20,
     paddingTop: 12,
@@ -886,6 +1041,54 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: 'rgba(255,255,255,0.6)',
+  },
+  // ── Loading overlay ───────────────────────────────────────────────────
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(8, 4, 20, 0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 999,
+  },
+  loadingCard: {
+    alignItems: 'center',
+    gap: 16,
+    paddingHorizontal: 40,
+  },
+  loadingIconRing: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: '#ff00ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 0, 255, 0.08)',
+    marginBottom: 8,
+  },
+  loadingTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: 4,
+    textAlign: 'center',
+  },
+  loadingSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.5)',
+    letterSpacing: 1,
+  },
+  loadingDots: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  loadingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ff00ff',
   },
   diceButton: {
     flexDirection: 'row',
