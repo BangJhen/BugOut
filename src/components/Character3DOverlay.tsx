@@ -30,6 +30,7 @@ function calculateScreenPosition(
   camX: number,
   camY: number,
 ): {left: number; top: number} {
+  'worklet';
   // Board-space position (before ISO transform)
   const boardX = col * STRIDE;
   const boardY = row * STRIDE;
