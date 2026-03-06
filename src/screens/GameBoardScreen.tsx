@@ -345,6 +345,7 @@ interface GameBoardProps {
   currentPlayer: number;
   onTilePress: (tile: TileData) => void;
   onCharacterPress: (character: GameCharacter) => void;
+  onBoardReady: () => void;
 }
 
 function GameBoard({
@@ -357,7 +358,15 @@ function GameBoard({
   currentPlayer,
   onTilePress,
   onCharacterPress,
+  onBoardReady,
 }: GameBoardProps) {
+  const boardReadyFiredRef = React.useRef(false);
+  const handleBoardLayout = useCallback(() => {
+    if (boardReadyFiredRef.current) return;
+    boardReadyFiredRef.current = true;
+    // Board layout done — wait extra 1.5s for Filament 3D models to fully load
+    setTimeout(() => onBoardReady(), 1500);
+  }, [onBoardReady]);
   // Helper: Get rotation angle for each player's perspective
   const getPlayerRotation = (playerId: number): number => {
     switch (playerId) {
@@ -474,7 +483,7 @@ function GameBoard({
       {/* Isometric projection wrapper - rotates based on current player */}
       <Animated.View style={rotationStyle}>
         {/* Camera pan (animated in board-space, before iso rotation) */}
-        <Animated.View style={[styles.boardContent, cameraStyle]}>
+        <Animated.View style={[styles.boardContent, cameraStyle]} onLayout={handleBoardLayout}>
           {/* Grid tiles — absolutely positioned */}
           {board.map((row, rowIdx) =>
             row.map((tile, colIdx) => {
@@ -621,18 +630,13 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
     setMonsters(spawnedMonsters);
   }, [board]);
 
-  // Wait for arena + 3D assets to fully initialize then fade out
-  useEffect(() => {
-    // 5s covers: Filament init + tile spawn animations (max ~1.2s) + 3D model load
-    const fadeTimer = setTimeout(() => {
-      loadingOpacity.value = withTiming(0, {duration: 600}, finished => {
-        if (finished) {
-          // Remove overlay from tree after fade completes
-          runOnJS(setIsReady)(true);
-        }
-      });
-    }, 5000);
-    return () => clearTimeout(fadeTimer);
+  const handleBoardReady = useCallback(() => {
+    // Board has laid out + Filament has had time to init — fade out overlay
+    loadingOpacity.value = withTiming(0, {duration: 600}, finished => {
+      if (finished) {
+        runOnJS(setIsReady)(true);
+      }
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -747,6 +751,7 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
           currentPlayer={currentPlayer}
           onTilePress={handleTilePress}
           onCharacterPress={handleCharacterPress}
+          onBoardReady={handleBoardReady}
         />
       </View>
 
