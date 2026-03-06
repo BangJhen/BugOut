@@ -364,8 +364,8 @@ function GameBoard({
   const handleBoardLayout = useCallback(() => {
     if (boardReadyFiredRef.current) return;
     boardReadyFiredRef.current = true;
-    // Board layout done — wait extra 1.5s for Filament 3D models to fully load
-    setTimeout(() => onBoardReady(), 1500);
+    // Board layout done — wait extra 10s for Filament 3D models to fully load
+    setTimeout(() => onBoardReady(), 10000);
   }, [onBoardReady]);
   // Helper: Get rotation angle for each player's perspective
   const getPlayerRotation = (playerId: number): number => {
