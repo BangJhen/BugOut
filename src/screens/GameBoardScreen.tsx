@@ -360,9 +360,9 @@ function GameBoard({
   const getPlayerRotation = (playerId: number): number => {
     switch (playerId) {
       case 1: return 275; // Top-left start base at front
-      case 2: return 185; // Bottom-right start base at front
-      case 3: return 95;  // Bottom-left start base at front
-      case 4: return 5;   // Top-right start base at front
+      case 2: return 75; // Bottom-right start base at front
+      case 3: return 200;  // Bottom-left start base at front
+      case 4: return 160;   // Top-right start base at front
       default: return 275;
     }
   };
@@ -786,6 +786,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 40,
   },
   boardContent: {
     width: BOARD_PX,
