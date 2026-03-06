@@ -26,9 +26,9 @@ interface FilamentCharacterProps {
 export default function FilamentCharacter({type, size}: FilamentCharacterProps) {
   const source = type === 'chip' ? chipModel : glitchyModel;
 
-  // Camera at elevated front-side angle for proper 3D depth.
-  // Rendered outside ISO transform, so use natural 3D viewing angle.
-  const CAM: [number, number, number] = [1.5, 2, 1.5];
+  // Camera positioned behind and above character for rear view
+  // This allows better view of the arena ahead of the character
+  const CAM: [number, number, number] = [0, 2, -2];
   const TARGET: [number, number, number] = [0, 0, 0];
   const UP: [number, number, number] = [0, 1, 0];
 
