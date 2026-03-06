@@ -507,18 +507,13 @@ function GameBoard({
               </View>
             );
           })}
+
+          {/* 3D character overlay — inside ISO transform for automatic positioning */}
+          {character3DEntries.length > 0 && (
+            <Character3DOverlay characters={character3DEntries} />
+          )}
         </Animated.View>
       </View>
-
-      {/* 3D character overlay — rendered at viewport level (outside ISO transform)
-          for proper 3D depth, positioned to match tile screen coords */}
-      {character3DEntries.length > 0 && (
-        <Character3DOverlay
-          characters={character3DEntries}
-          camX={camX}
-          camY={camY}
-        />
-      )}
     </View>
   );
 }
