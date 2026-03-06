@@ -31,34 +31,45 @@ function calculateScreenPosition(
   camY: number,
 ): {left: number; top: number} {
   'worklet';
-  // Board-space position (before ISO transform)
-  const boardX = col * STRIDE;
-  const boardY = row * STRIDE;
-
-  // Apply camera pan offset
-  const panX = boardX + camX;
-  const panY = boardY + camY;
-
-  // ISO projection: rotateX(55deg) rotateZ(45deg)
-  // This creates a diamond/isometric view
-  // Simplified 2D projection approximation:
-  // x_screen = (panX - panY) * cos(45°)
-  // y_screen = (panX + panY) * sin(45°) * cos(55°)
   
-  const cos45 = 0.7071;
-  const sin45 = 0.7071;
-  const cos55 = 0.5736;
-
-  const isoX = (panX - panY) * cos45;
-  const isoY = (panX + panY) * sin45 * cos55;
-
-  // Center in viewport
-  const centerX = VIEWPORT_SIZE / 2;
-  const centerY = VIEWPORT_SIZE / 2;
-
+  // Tile position in board space (top-left corner)
+  const tileX = col * STRIDE;
+  const tileY = row * STRIDE;
+  
+  // Center of tile (where character should be)
+  const tileCenterX = tileX + STRIDE / 2;
+  const tileCenterY = tileY + STRIDE / 2;
+  
+  // Apply camera pan (board moves relative to viewport)
+  const x = tileCenterX + camX;
+  const y = tileCenterY + camY;
+  
+  // The board container is centered in viewport, then ISO transform applied
+  // CSS: perspective(800) rotateX(55deg) rotateZ(45deg)
+  // This creates isometric diamond view
+  
+  // For rotateZ(45deg) then rotateX(55deg):
+  // After rotateZ(45deg): point (x,y) → ((x-y)/√2, (x+y)/√2)
+  // After rotateX(55deg): y-coordinate gets scaled by cos(55°) ≈ 0.574
+  
+  const cos45 = Math.SQRT1_2; // 1/√2 ≈ 0.7071
+  const cos55 = 0.574;
+  
+  // Apply rotateZ(45deg)
+  const x1 = (x - y) * cos45;
+  const y1 = (x + y) * cos45;
+  
+  // Apply rotateX(55deg) - scales y by cos(55°)
+  const x2 = x1;
+  const y2 = y1 * cos55;
+  
+  // Position in viewport (centered)
+  const viewportCenterX = VIEWPORT_SIZE / 2;
+  const viewportCenterY = VIEWPORT_SIZE / 2;
+  
   return {
-    left: centerX + isoX,
-    top: centerY + isoY,
+    left: viewportCenterX + x2,
+    top: viewportCenterY + y2,
   };
 }
 

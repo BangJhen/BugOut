@@ -138,10 +138,11 @@ function DiceIcon({size = 24}: {size?: number}) {
 interface AnimCharacterProps {
   character: GameCharacter;
   isSelected: boolean;
+  isCurrentPlayer: boolean;
   onPress: () => void;
 }
 
-function AnimCharacter({character, isSelected, onPress}: AnimCharacterProps) {
+function AnimCharacter({character, isSelected, isCurrentPlayer, onPress}: AnimCharacterProps) {
   const bounceY = useSharedValue(0);
   const glowOpacity = useSharedValue(0);
   const charScale = useSharedValue(0);
@@ -188,13 +189,15 @@ function AnimCharacter({character, isSelected, onPress}: AnimCharacterProps) {
           glowStyle,
         ]}
       />
-      <Animated.View style={animStyle}>
-        <Image
-          source={chipCharacter}
-          style={styles.charTapTarget}
-          resizeMode="contain"
-        />
-      </Animated.View>
+      {!isCurrentPlayer && (
+        <Animated.View style={animStyle}>
+          <Image
+            source={chipCharacter}
+            style={styles.charTapTarget}
+            resizeMode="contain"
+          />
+        </Animated.View>
+      )}
       <View style={[styles.playerBadge, {backgroundColor: character.color}]}>
         <Text style={styles.playerBadgeText}>P{character.playerId}</Text>
       </View>
@@ -210,6 +213,7 @@ interface TileCellProps {
   isSelected: boolean;
   character: GameCharacter | null;
   isCharSelected: boolean;
+  currentPlayer: number;
   hasMonster: boolean;
   onTilePress: () => void;
   onCharPress: () => void;
@@ -222,6 +226,7 @@ function TileCell({
   isSelected,
   character,
   isCharSelected,
+  currentPlayer,
   hasMonster,
   onTilePress,
   onCharPress,
@@ -264,6 +269,7 @@ function TileCell({
         <AnimCharacter
           character={character}
           isSelected={isCharSelected}
+          isCurrentPlayer={character.playerId === currentPlayer}
           onPress={onCharPress}
         />
       )}
@@ -469,6 +475,7 @@ function GameBoard({
                     isCharSelected={
                       charHere ? selectedCharacter?.id === charHere.id : false
                     }
+                    currentPlayer={currentPlayer}
                     hasMonster={!!monsterMap[key]}
                     onTilePress={() => onTilePress(tile)}
                     onCharPress={() => charHere && onCharacterPress(charHere)}
