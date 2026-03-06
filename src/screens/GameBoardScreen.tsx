@@ -22,7 +22,7 @@ import Animated, {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Path} from 'react-native-svg';
 import {Colors} from '../constants/theme';
-import FilamentCharacter from '../components/FilamentCharacter';
+import Character3DOverlay, {Character3DEntry} from '../components/Character3DOverlay';
 import {
   TileData,
   GameCharacter,
@@ -138,11 +138,10 @@ function DiceIcon({size = 24}: {size?: number}) {
 interface AnimCharacterProps {
   character: GameCharacter;
   isSelected: boolean;
-  isCurrentPlayer: boolean;
   onPress: () => void;
 }
 
-function AnimCharacter({character, isSelected, isCurrentPlayer, onPress}: AnimCharacterProps) {
+function AnimCharacter({character, isSelected, onPress}: AnimCharacterProps) {
   const bounceY = useSharedValue(0);
   const glowOpacity = useSharedValue(0);
   const charScale = useSharedValue(0);
@@ -190,15 +189,11 @@ function AnimCharacter({character, isSelected, isCurrentPlayer, onPress}: AnimCh
         ]}
       />
       <Animated.View style={animStyle}>
-        {isCurrentPlayer ? (
-          <FilamentCharacter type="chip" size={TILE_SIZE * 0.75} />
-        ) : (
-          <Image
-            source={chipCharacter}
-            style={styles.charTapTarget}
-            resizeMode="contain"
-          />
-        )}
+        <Image
+          source={chipCharacter}
+          style={styles.charTapTarget}
+          resizeMode="contain"
+        />
       </Animated.View>
       <View style={[styles.playerBadge, {backgroundColor: character.color}]}>
         <Text style={styles.playerBadgeText}>P{character.playerId}</Text>
@@ -215,7 +210,6 @@ interface TileCellProps {
   isSelected: boolean;
   character: GameCharacter | null;
   isCharSelected: boolean;
-  isCurrentPlayer: boolean;
   hasMonster: boolean;
   onTilePress: () => void;
   onCharPress: () => void;
@@ -228,7 +222,6 @@ function TileCell({
   isSelected,
   character,
   isCharSelected,
-  isCurrentPlayer,
   hasMonster,
   onTilePress,
   onCharPress,
@@ -271,7 +264,6 @@ function TileCell({
         <AnimCharacter
           character={character}
           isSelected={isCharSelected}
-          isCurrentPlayer={isCurrentPlayer}
           onPress={onCharPress}
         />
       )}
@@ -327,7 +319,6 @@ function StartBaseBadge({startBase, character, isCharSelected, onCharPress}: Sta
 function MonsterOverlay() {
   return (
     <View style={styles.monsterOverlay}>
-      <FilamentCharacter type="glitchy" size={TILE_SIZE * 0.75} />
       <View style={styles.monsterBadge}>
         <Text style={styles.monsterBadgeText}>!</Text>
       </View>
@@ -422,6 +413,28 @@ function GameBoard({
     return m;
   }, [characters]);
 
+  // ── Build 3D character entries (currentPlayer on-grid + monster) ──────
+  const character3DEntries = useMemo<Character3DEntry[]>(() => {
+    const entries: Character3DEntry[] = [];
+    // Only render 3D for current player's on-grid character
+    const currentChar = characters.find(
+      c => c.playerId === currentPlayer && !c.onStartBase,
+    );
+    if (currentChar) {
+      entries.push({
+        id: currentChar.id,
+        type: 'chip',
+        row: currentChar.row,
+        col: currentChar.col,
+      });
+    }
+    // Render 3D for monster
+    monsters.forEach(m => {
+      entries.push({id: m.id, type: 'glitchy', row: m.row, col: m.col});
+    });
+    return entries;
+  }, [characters, monsters, currentPlayer]);
+
   // ── Render ─────────────────────────────────────────────────────────────
   return (
     <View style={styles.viewport}>
@@ -455,9 +468,6 @@ function GameBoard({
                     character={charHere}
                     isCharSelected={
                       charHere ? selectedCharacter?.id === charHere.id : false
-                    }
-                    isCurrentPlayer={
-                      charHere?.playerId === currentPlayer
                     }
                     hasMonster={!!monsterMap[key]}
                     onTilePress={() => onTilePress(tile)}
@@ -493,6 +503,15 @@ function GameBoard({
         </Animated.View>
       </View>
 
+      {/* 3D character overlay — rendered at viewport level (outside ISO transform)
+          for proper 3D depth, positioned to match tile screen coords */}
+      {character3DEntries.length > 0 && (
+        <Character3DOverlay
+          characters={character3DEntries}
+          camX={camX}
+          camY={camY}
+        />
+      )}
     </View>
   );
 }
