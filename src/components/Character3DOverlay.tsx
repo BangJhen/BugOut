@@ -41,12 +41,13 @@ interface AnimatedCharacterItemProps {
 function AnimatedCharacterItem({char}: AnimatedCharacterItemProps) {
   const animStyle = useAnimatedStyle(() => {
     const pos = calculateBoardPosition(char.row, char.col);
-    const charSize = TILE_SIZE * 0.75; // 54px
+    const charSize = TILE_SIZE * 0.75; // keep footprint stable for centering
+    const liftY = 16;
     
     return {
       position: 'absolute',
       left: pos.left + (TILE_SIZE - charSize) / 2, // center in tile
-      top: pos.top + (TILE_SIZE - charSize) / 2,
+      top: pos.top + (TILE_SIZE - charSize) / 2 - liftY,
       width: charSize,
       height: charSize,
     };
@@ -54,7 +55,7 @@ function AnimatedCharacterItem({char}: AnimatedCharacterItemProps) {
 
   return (
     <Animated.View style={animStyle}>
-      <FilamentCharacter type={char.type} size={TILE_SIZE * 0.75} />
+      <FilamentCharacter type={char.type} size={TILE_SIZE * 0.75} modelScale={1.18} />
     </Animated.View>
   );
 }
