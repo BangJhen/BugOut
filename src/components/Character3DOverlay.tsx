@@ -11,9 +11,8 @@ import {
 const chipModel = require('../assets/models/chip_character.glb');
 const glitchyModel = require('../assets/models/glitchy_character.glb');
 
-const BOARD_SIZE = 4;
-const WORLD_STRIDE = 1.25;
-const WORLD_Y = 0.26;
+const STAGE_SPACING = 1.8;
+const STAGE_Y = 0.45;
 
 export type FilamentCharacterType = 'chip' | 'glitchy';
 
@@ -28,11 +27,10 @@ interface Character3DOverlayProps {
   characters: Character3DEntry[];
 }
 
-function toWorldPosition(row: number, col: number): [number, number, number] {
-  const half = (BOARD_SIZE - 1) / 2;
-  const x = (col - half) * WORLD_STRIDE;
-  const z = (row - half) * WORLD_STRIDE;
-  return [x, WORLD_Y, z];
+function toStagePosition(index: number, count: number): [number, number, number] {
+  const half = (count - 1) / 2;
+  const x = (index - half) * STAGE_SPACING;
+  return [x, STAGE_Y, 0];
 }
 
 export default function Character3DOverlay({
@@ -40,12 +38,12 @@ export default function Character3DOverlay({
 }: Character3DOverlayProps) {
   const sceneModels = useMemo(
     () =>
-      characters.map(char => {
+      characters.map((char, idx) => {
         const source = char.type === 'chip' ? chipModel : glitchyModel;
         const rotate: [number, number, number] =
-          char.type === 'chip' ? [0.12, 0.72, 0] : [0.08, 1.2, 0];
-        const translate = toWorldPosition(char.row, char.col);
-        const scale = char.type === 'chip' ? 1.2 : 1.25;
+          char.type === 'chip' ? [0.18, 0.9, 0] : [0.14, 1.35, 0];
+        const translate = toStagePosition(idx, characters.length);
+        const scale = char.type === 'chip' ? 1.75 : 1.85;
 
         return {
           id: char.id,
@@ -64,8 +62,8 @@ export default function Character3DOverlay({
         <FilamentView style={styles.sceneView} pointerEvents="none">
           <DefaultLight />
           <Camera
-            cameraPosition={[0, 3.2, 5.1]}
-            cameraTarget={[0, 0, 0]}
+            cameraPosition={[0, 1.25, 4.6]}
+            cameraTarget={[0, 0.35, 0]}
             cameraUp={[0, 1, 0]}
           />
 

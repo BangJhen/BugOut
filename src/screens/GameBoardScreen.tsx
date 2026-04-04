@@ -414,7 +414,7 @@ function GameBoard({
   const rotationStyle = useAnimatedStyle(() => ({
     transform: [
       {perspective: 800},
-      {rotateX: '45deg'},
+      {rotateX: '60deg'},
       {rotateZ: `${boardRotation.value}deg`},
     ],
   }));
@@ -454,28 +454,6 @@ function GameBoard({
     });
     return m;
   }, [characters]);
-
-  // ── Build 3D character entries (currentPlayer on-grid + monster) ──────
-  const character3DEntries = useMemo<Character3DEntry[]>(() => {
-    const entries: Character3DEntry[] = [];
-    // Only render 3D for current player's on-grid character
-    const currentChar = characters.find(
-      c => c.playerId === currentPlayer && !c.onStartBase,
-    );
-    if (currentChar) {
-      entries.push({
-        id: currentChar.id,
-        type: 'chip',
-        row: currentChar.row,
-        col: currentChar.col,
-      });
-    }
-    // Render 3D for monster
-    monsters.forEach(m => {
-      entries.push({id: m.id, type: 'glitchy', row: m.row, col: m.col});
-    });
-    return entries;
-  }, [characters, monsters, currentPlayer]);
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
@@ -543,11 +521,6 @@ function GameBoard({
               </View>
             );
           })}
-
-          {/* 3D character overlay — inside ISO transform for automatic positioning */}
-          {character3DEntries.length > 0 && (
-            <Character3DOverlay characters={character3DEntries} />
-          )}
         </Animated.View>
       </Animated.View>
     </View>
@@ -629,6 +602,25 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
     const spawnedMonsters = spawnMonsters(board);
     setMonsters(spawnedMonsters);
   }, [board]);
+
+  const character3DEntries = useMemo<Character3DEntry[]>(() => {
+    const entries: Character3DEntry[] = [];
+    const currentChar = characters.find(
+      c => c.playerId === currentPlayer && !c.onStartBase,
+    );
+    if (currentChar) {
+      entries.push({
+        id: currentChar.id,
+        type: 'chip',
+        row: currentChar.row,
+        col: currentChar.col,
+      });
+    }
+    monsters.forEach(m => {
+      entries.push({id: m.id, type: 'glitchy', row: m.row, col: m.col});
+    });
+    return entries;
+  }, [characters, monsters, currentPlayer]);
 
   const handleBoardReady = useCallback(() => {
     // Board has laid out + Filament has had time to init — fade out overlay
@@ -754,6 +746,10 @@ export default function GameBoardScreen({squadSize, onBack}: GameBoardScreenProp
           onBoardReady={handleBoardReady}
         />
       </View>
+
+      {character3DEntries.length > 0 && (
+        <Character3DOverlay characters={character3DEntries} />
+      )}
 
       {/* Turn Info */}
       <View style={[styles.bottomPanel, {paddingBottom: insets.bottom + 16}]}>
