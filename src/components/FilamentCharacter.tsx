@@ -26,11 +26,12 @@ interface FilamentCharacterProps {
 export default function FilamentCharacter({type, size}: FilamentCharacterProps) {
   const source = type === 'chip' ? chipModel : glitchyModel;
 
-  // Diagonal elevated camera gives stronger perspective depth.
-  const CAM: [number, number, number] = [2.2, 1.6, -2.2];
-  const TARGET: [number, number, number] = [0, 0.1, 0];
+  // Lower camera elevation to avoid top-down flattening.
+  const CAM: [number, number, number] = [2.8, 0.9, -2.8];
+  const TARGET: [number, number, number] = [0, 0.2, 0];
   const UP: [number, number, number] = [0, 1, 0];
-  const MODEL_ROTATE: [number, number, number] = [-0.2, 0.7, 0];
+  const MODEL_ROTATE: [number, number, number] =
+    type === 'chip' ? [0.18, 0.45, 0] : [0.12, 0.95, 0];
 
   return (
     <View style={[styles.container, {width: size, height: size}]}>
