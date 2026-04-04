@@ -1,12 +1,21 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import {View, StyleSheet} from 'react-native';
-import Animated, {useAnimatedStyle} from 'react-native-reanimated';
-import FilamentCharacter, {FilamentCharacterType} from './FilamentCharacter';
+import {
+  Camera,
+  DefaultLight,
+  FilamentScene,
+  FilamentView,
+  Model,
+} from 'react-native-filament';
 
-// Constants from GameBoardScreen
-const TILE_SIZE = 72;
-const TILE_GAP = 4;
-const STRIDE = TILE_SIZE + TILE_GAP; // 76
+const chipModel = require('../assets/models/chip_character.glb');
+const glitchyModel = require('../assets/models/glitchy_character.glb');
+
+const BOARD_SIZE = 4;
+const WORLD_STRIDE = 1.25;
+const WORLD_Y = 0.26;
+
+export type FilamentCharacterType = 'chip' | 'glitchy';
 
 export interface Character3DEntry {
   id: string;
@@ -19,58 +28,60 @@ interface Character3DOverlayProps {
   characters: Character3DEntry[];
 }
 
-// Calculate board-space position for a tile (same as TileCell positioning)
-function calculateBoardPosition(
-  row: number,
-  col: number,
-): {left: number; top: number} {
-  'worklet';
-  
-  // Position in board space (same as tiles)
-  const left = col * STRIDE;
-  const top = row * STRIDE;
-  
-  return {left, top};
-}
-
-// Individual animated character component
-interface AnimatedCharacterItemProps {
-  char: Character3DEntry;
-}
-
-function AnimatedCharacterItem({char}: AnimatedCharacterItemProps) {
-  const animStyle = useAnimatedStyle(() => {
-    const pos = calculateBoardPosition(char.row, char.col);
-    const charSize = TILE_SIZE * 0.75; // keep footprint stable for centering
-    const liftY = 16;
-    
-    return {
-      position: 'absolute',
-      left: pos.left + (TILE_SIZE - charSize) / 2, // center in tile
-      top: pos.top + (TILE_SIZE - charSize) / 2 - liftY,
-      width: charSize,
-      height: charSize,
-    };
-  });
-
-  return (
-    <Animated.View style={animStyle}>
-      <FilamentCharacter type={char.type} size={TILE_SIZE * 0.75} modelScale={1.18} />
-    </Animated.View>
-  );
+function toWorldPosition(row: number, col: number): [number, number, number] {
+  const half = (BOARD_SIZE - 1) / 2;
+  const x = (col - half) * WORLD_STRIDE;
+  const z = (row - half) * WORLD_STRIDE;
+  return [x, WORLD_Y, z];
 }
 
 export default function Character3DOverlay({
   characters,
 }: Character3DOverlayProps) {
+  const sceneModels = useMemo(
+    () =>
+      characters.map(char => {
+        const source = char.type === 'chip' ? chipModel : glitchyModel;
+        const rotate: [number, number, number] =
+          char.type === 'chip' ? [0.12, 0.72, 0] : [0.08, 1.2, 0];
+        const translate = toWorldPosition(char.row, char.col);
+        const scale = char.type === 'chip' ? 1.2 : 1.25;
+
+        return {
+          id: char.id,
+          source,
+          rotate,
+          translate,
+          scale,
+        };
+      }),
+    [characters],
+  );
+
   return (
     <View style={styles.overlay} pointerEvents="none">
-      {characters.map(char => (
-        <AnimatedCharacterItem
-          key={char.id}
-          char={char}
-        />
-      ))}
+      <FilamentScene>
+        <FilamentView style={styles.sceneView} pointerEvents="none">
+          <DefaultLight />
+          <Camera
+            cameraPosition={[0, 3.2, 5.1]}
+            cameraTarget={[0, 0, 0]}
+            cameraUp={[0, 1, 0]}
+          />
+
+          {sceneModels.map(model => (
+            <Model
+              key={model.id}
+              source={model.source}
+              rotate={model.rotate}
+              translate={model.translate}
+              scale={[model.scale, model.scale, model.scale]}
+              transformToUnitCube
+              multiplyWithCurrentTransform={false}
+            />
+          ))}
+        </FilamentView>
+      </FilamentScene>
     </View>
   );
 }
@@ -79,5 +90,9 @@ const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 100,
+  },
+  sceneView: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
 });
