@@ -26,11 +26,11 @@ interface FilamentCharacterProps {
 export default function FilamentCharacter({type, size}: FilamentCharacterProps) {
   const source = type === 'chip' ? chipModel : glitchyModel;
 
-  // Camera positioned behind and above character for rear view
-  // This allows better view of the arena ahead of the character
-  const CAM: [number, number, number] = [0, 2, -2];
-  const TARGET: [number, number, number] = [0, 0, 0];
+  // Diagonal elevated camera gives stronger perspective depth.
+  const CAM: [number, number, number] = [2.2, 1.6, -2.2];
+  const TARGET: [number, number, number] = [0, 0.1, 0];
   const UP: [number, number, number] = [0, 1, 0];
+  const MODEL_ROTATE: [number, number, number] = [-0.2, 0.7, 0];
 
   return (
     <View style={[styles.container, {width: size, height: size}]}>
@@ -44,6 +44,7 @@ export default function FilamentCharacter({type, size}: FilamentCharacterProps) 
           />
           <Model
             source={source}
+            rotate={MODEL_ROTATE}
             transformToUnitCube
             multiplyWithCurrentTransform={false}
           />
